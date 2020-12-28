@@ -1,4 +1,4 @@
-(defproject webgl-tutorial "0.1.0-SNAPSHOT"
+(defproject webgl-30 "0.1.0-SNAPSHOT"
   :description "FIXME: write this!"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -10,7 +10,6 @@
                  [org.clojure/clojurescript "1.10.773"]
                  [org.clojure/core.async "0.4.500"]
                  [hiccup "2.0.0-alpha2"]
-                 [thi.ng/geom "1.0.0-RC4"]                  ;; seems to be requiresd here otherwise cursive wont pick it up...?
                  [reagent "0.10.0" :exclusions [cljsjs/react cljsjs/react-dom cljsjs/react-dom-server]]]
 
   :plugins [[lein-figwheel "0.5.20"]
@@ -25,14 +24,14 @@
                 ;; The presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
                 ;; into your build
-                :figwheel     {:on-jsload "webgl-tutorial.core/on-js-reload"
+                :figwheel     {:on-jsload "webgl-30.core/on-js-reload"
                                ;; :open-urls will pop open your application
                                ;; in the default browser once Figwheel has
                                ;; started and compiled your application.
                                ;; Comment this out once it no longer serves you.
                                :open-urls ["http://localhost:3449/index.html"]}
 
-                :compiler     {:main                 webgl-tutorial.core
+                :compiler     {:main                 webgl-30.core
                                :target               :bundle
                                :asset-path           "js/compiled/out"
                                :output-to            "resources/public/js/compiled/out/index.js"
@@ -49,7 +48,7 @@
                {:id           "min"
                 :source-paths ["src"]
                 :compiler     {:output-to     "resources/public/js/compiled/webgl_tutorial.js"
-                               :main          webgl-tutorial.core
+                               :main          webgl-30.core
                                :optimizations :advanced
                                :pretty-print  false}}]}
 

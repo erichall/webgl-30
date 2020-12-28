@@ -1,9 +1,6 @@
-{:source-paths ["src" "test"]
+{:source-paths ["src"]
 
- ;; awesome cljs server side rendering!
- ;; https://github.com/tsaastam/cljs-webgl-example/blob/master/src/example/views.clj
  :dependencies [[org.clojure/core.async "0.4.500"]
-                [thi.ng/geom "1.0.0-RC4"]                   ;; but it seems to be needed here also for shadow-cljs?!.......
                 [reagent "1.0.0"]]
 
  :dev-http     {3449 "resources/public/"}
@@ -12,15 +9,15 @@
                        :asset-path "."
                        :target     :browser
                        :modules    {:main {
-                                           :init-fn webgl-tutorial.bare-bone/init!
+                                           :init-fn webgl-30.core/init!
                                            }}
                        :devtools   {
-                                    :after-load webgl-tutorial.bare-bone/reload!
+                                    :after-load webgl-30.core/reload!
                                     }
                        }
 
                 :test {:target    :node-test
                        :output-to "out/node-tests.js"
-                       :runner-ns conways-game-of-life.test-all ;; TODO
-                       :main      conways-game-of-life.test-all/init
+                       :runner-ns webgl-30.test-all         ;; TODO
+                       :main      webgl-30.test-all/init
                        }}}

@@ -1,15 +1,44 @@
 (ns webgl-30.core
-  (:require [webgl-30.component :refer [slider slider-component]]
-            [reagent.core :as r]
+  (:require [webgl-30.component :refer [app]]
             [reagent.dom :as rd]))
 
 (defonce state-atom (atom nil))
 (def initial-state
-  {:x         0
-   :y         0
-   :canvas-id "main-canvas"
-   :canvas    nil
-   :gl        nil})
+  {:canvas-id        "main-canvas"
+   :canvas-dim       {:width  400
+                      :height 400}
+   :gl               nil
+   :program          nil
+   :attributes       []
+   :translation-rect {:x      0
+                      :y      0
+                      :width  200
+                      :height 50}
+   :active-shape     :f-shape
+   :f-shape          {:offset 0
+                      :count  18
+                      :shape  [
+                               ; left column
+                               0 0
+                               30 0
+                               0 150
+                               0 150
+                               30 0
+                               30 150
+                               ; top rung
+                               30 0
+                               100 0
+                               30 30
+                               30 30
+                               100 0
+                               100 30
+                               ; middle rung
+                               30 60
+                               67 60
+                               30 90
+                               30 90
+                               67 60
+                               67 90]}})
 
 (when (nil? @state-atom)
   (reset! state-atom initial-state))
@@ -18,10 +47,13 @@
   {
    :vs "
    attribute vec2 a_position;
+
    uniform vec2 u_resolution;
+   uniform vec2 u_translation;
 
     void main() {
-      vec2 zeroToOne = a_position / u_resolution;
+      vec2 position = a_position + u_translation;
+      vec2 zeroToOne = position / u_resolution;
       vec2 zeroToTwo = zeroToOne * 2.0;
       vec2 clipSpace = zeroToTwo - 1.0;
 
@@ -64,7 +96,7 @@
 (defn resize-canvas-to-display-size
   [gl]
   (let [canvas (.-canvas gl)
-        css-to-real-pixels (or (.-devicePixelRatio js/window) 1)
+        css-to-real-pixels 1                                ;(or (.-devicePixelRatio js/window) 1)
         d-width (Math/floor (* (.-clientWidth canvas) css-to-real-pixels))
         d-height (Math/floor (* (.-clientHeight canvas) css-to-real-pixels))]
     (when-not (or (= (.-width canvas) d-width)
@@ -100,7 +132,7 @@
 
 (defn set-rectangle!
   "Create a rectangle by using two triangles"
-  [gl x y width height]
+  [gl {:keys [x y width height]}]
   (let [x1 x
         x2 (+ x width)
         y1 y
@@ -113,6 +145,14 @@
                                                   x2, y1,
                                                   x2, y2])
                      :usage    (.-STATIC_DRAW gl)})))
+
+(defn set-geometry!
+  "geo is a list of vertices"
+  [{:keys [gl] :as state} geo]
+  (buffer-data gl {:target   (.-ARRAY_BUFFER gl)
+                   :src-data (js/Float32Array. geo)
+                   :usage    (.-STATIC_DRAW gl)})
+  state)
 
 (defn set-triangle!
   [gl]
@@ -127,15 +167,19 @@
 
 (defn initialize-gl!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
-  [gl {:keys [vs fs]}]
+  [{:keys [gl]} {:keys [vs fs]}]
   (let [vs (create-shader gl (.-VERTEX_SHADER gl) vs)
-        fs (create-shader gl (.-FRAGMENT_SHADER gl) fs)]
-    (create-program gl vs fs)))
+        fs (create-shader gl (.-FRAGMENT_SHADER gl) fs)
+        program (create-program gl vs fs)]
+
+    ;; we only have to bind the buffer once
+    (bind-buffer gl (.-ARRAY_BUFFER gl))
+    program))
 
 (defn draw-scene!
-  [gl program attributes]
+  [{:keys [gl attributes program] :as state}]
   (let [uniform-location (.getUniformLocation gl program "u_resolution")
-        buffer (bind-buffer gl (.-ARRAY_BUFFER gl))]
+        translation-location (.getUniformLocation gl program "u_translation")]
 
     (resize-canvas-to-display-size gl)
     (set-gl-viewport! gl)
@@ -146,68 +190,52 @@
 
     ;; set the resolution
     (.uniform2f gl uniform-location (aget gl "canvas" "width") (aget gl "canvas" "height"))
+    (.uniform2fv gl translation-location [(get-in state [:translation-rect :x])
+                                          (get-in state [:translation-rect :y])])
 
     (doseq [{:keys [location size type normalize stride offset]} attributes]
-      ;; Turn the variablel on inside our GSLS VS program above.
+      ;; Turn the variable on inside our GLSL VS program above.
       (.enableVertexAttribArray gl location)
       ;; Describe how to take the data from our buffer and give it to our shader.
       (.vertexAttribPointer gl location size type normalize stride offset))
 
-    (let [uniform-color-location (.getUniformLocation gl program "u_color")]
-      (set-rectangle! gl 0 0 200 50)
-      (.uniform4f gl uniform-color-location (Math/random) (Math/random) (Math/random) 1)
-      (.drawArrays gl (.-TRIANGLES gl) 0 6)
-      )
-    )
-  )
+    (let [uniform-color-location (.getUniformLocation gl program "u_color")
+          {:keys [offset count]} (get state (:active-shape state))]
+      ;; we only have to do this once
+      ;(set-rectangle! gl (:translation-rect state))
+
+      ;; set the color
+      (.uniform4f gl uniform-color-location 0.3 0 0 1)
+
+      ;; actually draw it
+      (.drawArrays gl (.-TRIANGLES gl) offset count))
+    state))
 
 (defn handle-event!
   [name data]
   (condp = name
-    :x-change (swap! state-atom assoc :x data)
-    :y-change (swap! state-atom assoc :y data)
+    :x-change (swap! state-atom (fn [state]
+                                  (-> (assoc-in state [:translation-rect :x] data)
+                                      draw-scene!)))
+    :y-change (swap! state-atom (fn [state]
+                                  (-> (assoc-in state [:translation-rect :y] data)
+                                      draw-scene!)))
 
-    :canvas-ref (swap! state-atom (fn [state]
-                                    (-> (assoc state :canvas data)
-                                        (assoc :gl (.getContext data "webgl")))))
-    :canvas-did-mount (let [gl (:gl @state-atom)
-                            program (initialize-gl! gl shaders)
-                            position-attribute-location (.getAttribLocation gl program "a_position")]
-
-                        ;(let [primitive-type (.-TRIANGLES gl)
-                        ;      offset 0
-                        ;      count 6
-                        ;      ]
-                        ;  (.drawArrays gl primitive-type offset count))
-
-                        (draw-scene! gl program [{:location  position-attribute-location
-                                                  :size      2
-                                                  :type      (.-FLOAT gl)
-                                                  :normalize false
-                                                  :stride    0
-                                                  :offset    0}]))
+    :canvas-ref (swap! state-atom assoc :gl (.getContext data "webgl"))
+    :canvas-did-mount (swap! state-atom (fn [{:keys [gl attributes] :as state}]
+                                          (let [program (initialize-gl! state shaders)]
+                                            (-> (assoc state :program program)
+                                                (assoc :attributes (conj attributes
+                                                                         {:location  (.getAttribLocation gl program "a_position")
+                                                                          :size      2
+                                                                          :type      (.-FLOAT gl)
+                                                                          :normalize false
+                                                                          :stride    0
+                                                                          :offset    0}))
+                                                (set-geometry! (get-in state [(:active-shape state) :shape]))
+                                                draw-scene!))))
 
     nil))
-
-(defn webgl-canvas
-  [{:keys [state trigger-event]}]
-  (r/create-class
-    {:display-name        "webgl-canvas"
-     :reagent-render      (fn [] [:canvas {:ref    (fn [el]
-                                                     ;; hot reloading seems to give is nil here?!?!
-                                                     (when el
-                                                       (trigger-event :canvas-ref el)))
-                                           :width  "400px"
-                                           :height "400px"
-                                           :id     (:canvas-id state)}])
-     :component-did-mount (fn [] (trigger-event :canvas-did-mount))}))
-
-(defn app
-  [{:keys [state trigger-event]}]
-  [:div
-   [slider-component {:trigger-event trigger-event
-                      :state         state}]
-   [webgl-canvas {:trigger-event trigger-event :state state}]])
 
 (defn render-component
   [state]

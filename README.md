@@ -84,11 +84,109 @@ in the way they are written.
 Tomorrow we will continue with the translation part of the great tutorials from 
 webglfundamentals.
 
-##### Conclusions
+##### Conclusion
 We managed to make some refactorings today, maybe not much for the actual WebGL stuff 
 but at least we have something to build upon when we continue the tutorials.
 
 ---
+### 2/30
+
+##### What the heck did we do yesterday?
+Spent yesterday with refactoring stuff and didn't really have time for doing more WebGL stuff. 
+
+The best thing we did I guess was to refactor how the canvas element is handled. 
+
+Before we had the canvas element inside `index.html` 
+```html
+  <body>
+    <div id="app">
+      <canvas id="main" height="400px" width="400px"></canvas>
+    </div>
+    <script src="main.js" type="text/javascript"></script>
+  </body>
+```
+This felt kinda awkward since you couldn't really control it apart from doing `querySelector` on it and mutating it.
+And it was messy when we wanted to add other reagent components.
+
+The solution was to use some lovley hiccup and create it with cljs like this
+```clojure
+(defn webgl-canvas
+  [{:keys [state trigger-event]}]
+  (r/create-class
+    {:display-name        "webgl-canvas"
+     :reagent-render      (fn [] [:canvas {:ref    (fn [el]
+                                                     ;; hot reloading seems to give is nil here?!?!
+                                                     (when el
+                                                       (trigger-event :canvas-ref el)))
+                                           :width  "400px"
+                                           :height "400px"
+                                           :style  {:border "1px dashed green"}
+                                           :id     (:canvas-id state)}])
+     :component-did-mount (fn [] (trigger-event :canvas-did-mount))}))
+```
+inside our handle-event fn we simply take the context
+```clojure
+  :canvas-ref (swap! state-atom assoc :gl (.getContext data "webgl"))
+```
+
+Two things might be wrong here, to have the gl-context inside the state-atom, might not be optimal.
+The second strange thing is the ref and shadow-cljs hot reloading, it seems to be nil when hot reloading kicks in.
 
 
+##### What did we do today?
+2d translations by following [webglfundamentals](https://webglfundamentals.org/webgl/lessons/webgl-2d-translation.html). 
+
+The initial translation was done through setting the direct x and y values on the object like this
+```clojure
+(defn set-rectangle!
+  "Create a rectangle by using two triangles"
+  [gl {:keys [x y width height]}]
+  (let [x1 x
+        x2 (+ x width)
+        y1 y
+        y2 (+ y height)]
+    (buffer-data gl {:target   (.-ARRAY-BUFFER gl)
+                     :src-data (js/Float32Array. [x1, y1,
+                                                  x2, y1,
+                                                  x1, y2,
+                                                  x1, y2,
+                                                  x2, y1,
+                                                  x2, y2])
+                     :usage    (.-STATIC_DRAW gl)})))
+```
+whilst it looks kinda cumbersome for this simple rectangle, it is doable to set it up like this. 
+However, there is a much better way to do it as we learned from the tutorial. 
+
+The preferred way is to use the `Vertex shader`
+```
+   attribute vec2 a_position;
+
+   uniform vec2 u_resolution;
+   uniform vec2 u_translation; // <-- this 
+
+    void main() {
+      vec2 position = a_position + u_translation; // <-- this
+      vec2 zeroToOne = position / u_resolution; // <-- this
+      vec2 zeroToTwo = zeroToOne * 2.0;
+      vec2 clipSpace = zeroToTwo - 1.0;
+
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    }
+```
+With this, we just need to direct the shader on how do use this variable, inside the draw-scene! function we added this
+```clojure
+translation-location (.getUniformLocation gl program "u_translation")
+...
+   (.uniform2fv gl translation-location [(get-in state [:translation-rect :x])
+                                          (get-in state [:translation-rect :y])])
+```
+
+##### Moving forward?
+Next up is some 2d rotating: [https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html](https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html)
+
+##### Conclusion
+I guess the overall architecture is moving in the right direction, but I'm not completely happy with it. 
+As it is now, almost everything has been moved inside the `state-atom`, even the `gl` context object. 
+I guess this is the thing that kinda bothers me, all the WebGL functions is mutating the `gl` context object on the canvas 
+without returning anything.
 

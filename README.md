@@ -190,3 +190,95 @@ As it is now, almost everything has been moved inside the `state-atom`, even the
 I guess this is the thing that kinda bothers me, all the WebGL functions is mutating the `gl` context object on the canvas 
 without returning anything.
 
+---
+
+### 3/30
+
+##### What the heck did we do yesterday?
+Complete setup with a efficient way of handling translations of objects in 2d space. Instead of 
+setting a new shape on each render, we applied some math in our vertex shader to control the position 
+of the object. 
+
+##### What did we do today?
+The 2d rotating chapter from [webglfundamentals.org](https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html). 
+
+So far, both color, translation and rotating has been done by adding a uniform variable in our vertex shader and
+doing some math on it. The vertex shader now looks like this
+```
+   attribute vec2 a_position;
+
+   uniform vec2 u_resolution;
+   uniform vec2 u_translation;
+   uniform vec2 u_rotation; // <-- this
+
+    void main() {
+      vec2 rotatedPosition = vec2(                                  // <-- this
+        a_position.x * u_rotation.y + a_position.y * u_rotation.x,  // <-- this
+        a_position.y * u_rotation.y - a_position.x * u_rotation.x   // <-- this
+      );
+      vec2 position = rotatedPosition + u_translation;              // <-- this
+      vec2 zeroToOne = position / u_resolution;
+      vec2 zeroToTwo = zeroToOne * 2.0;
+      vec2 clipSpace = zeroToTwo - 1.0;
+
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+```
+and then 'binding' it or what you would like to call it when we draw later on. I did some 
+refactoring to our uniform variables since they started to grow.
+
+They are now initialized when our canvas has been mounted, I guess maybe you don't want to add more
+uniform variables after the initial setup, or that would require changes in the shaders too. 
+
+We create the uniform variables like this now
+```clojure
+ (assoc state :uniforms (conj uniforms
+                       {:type   :uniform2fv
+                        :name   "u_resolution"
+                        :values [(aget gl "canvas" "width")
+                                 (aget gl "canvas" "height")]}
+                       {:type   :uniform2fv
+                        :name   "u_translation"
+                        :values [(get-in state [:translation-rect :x])
+                                 (get-in state [:translation-rect :y])]}
+                       {:type   :uniform4fv
+                        :name   "u_color"
+                        :values [0.3 0.8 0 1]}
+                       {:type   :uniform2fv
+                        :name   "u_rotation"
+                        :values [0 1]}))
+```
+
+When rendering we can just do
+```clojure
+ (doseq [uniform uniforms]
+    (set-uniform gl program uniform))
+```
+where `set-uniform` is defined as
+```clojure
+(defn set-uniform
+  [^js gl program {:keys [type name values]}]
+  (let [location (.getUniformLocation gl program name)]
+    (condp = type
+      :uniform2fv (.uniform2fv gl location values)
+      :uniform4fv (.uniform4fv gl location values))))
+```
+
+Not really sure what is going on with the `uniformXXX` functions and cljs.
+there are two functions, one is called `uniform2f` and the other one is called `uniform2fv`, with a `v` in the end.
+but they seems to be doing the same thing but the latter one works with a list as argument...
+I spent, 40 min trying to partially apply the function because of the variable arguments but
+without any success.. 
+like, why dosn't this work
+```clojurue
+(apply (partial (.-uniform2f gl) location) [1 2 3]) ;; => Uncaught TypeError: Illegal invocation....
+```
+##### Moving forward?
+Next up is 2d scaling!
+
+##### Conclusion
+I think we start to get in the WebGL mojo by now. At least in the 2d space :) however, Yesterday I complained about the 
+hidden `gl` state which all functions seem to mutate, but I guess that is the exact thing we are trying to do in clojure, other than 
+you can't really see the state inside the gl variable, or maybe there is a way to see it somehow?
+
+I guess it's still kinda awkward to deal with one of your "local" state in a atom, and then inside this state atom, I've put the
+gl context which is being mutated on.

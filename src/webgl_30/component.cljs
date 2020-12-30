@@ -2,10 +2,11 @@
   (:require [reagent.core :as r]))
 
 (defn slider
-  [{:keys [on-change value min max]}]
+  [{:keys [on-change value min max step]}]
   [:input {:type          "range"
            :min           min
            :default-value value
+           :step          (or step 1)
            :max           max
            :style         {:width "100%"}
            :on-change     (fn [evt]
@@ -14,30 +15,38 @@
 
 (defn slider-component
   [{:keys [state trigger-event]}]
-  (println (:x state))
   [:div {:style {:width "200px"}}
-   [:div
-    "x"
+   [:div {:style {:display        "flex"
+                  :flex-direction "row"}}
+    [:span "x"]
     [slider {:value     (get-in state [:translation-rect :x])
              :min       0
              :max       (get-in state [:canvas-dim :width])
-             :on-change (fn [val] (trigger-event :x-change val))}]]
-   [:div
-    "y"
+             :on-change (fn [val] (trigger-event :x-change val))}]
+    [:span (get-in state [:translation-rect :x])]]
+   [:div {:style {:display        "flex"
+                  :flex-direction "row"}}
+    [:span "y"]
     [slider {:value     (get-in state [:translation-rect :y])
              :min       0
              :max       (get-in state [:canvas-dim :height])
-             :on-change (fn [val] (trigger-event :y-change val))}]]])
+             :on-change (fn [val] (trigger-event :y-change val))}]
+    [:span (get-in state [:translation-rect :y])]]
+   [:div {:style {:display        "flex"
+                  :flex-direction "row"}}
+    [:span "deg"]
+    [slider {:value     (get-in state [:translation-rect :rotation])
+             :min       0
+             :max       360
+             :on-change (fn [val] (trigger-event :rotation-change val))}]
+    [:span (get-in state [:translation-rect :rotation])]]
+   ])
 
 (defn webgl-canvas
   [{:keys [state trigger-event]}]
   (r/create-class
     {:display-name        "webgl-canvas"
-     :reagent-render      (fn [] [:canvas {:ref    (fn [el]
-                                                     ;; hot reloading seems to give is nil here?!?!
-                                                     (when el
-                                                       (trigger-event :canvas-ref el)))
-                                           :width  (str (get-in state [:canvas-dim :width]) "px")
+     :reagent-render      (fn [] [:canvas {:width  (str (get-in state [:canvas-dim :width]) "px")
                                            :height (str (get-in state [:canvas-dim :height]) "px")
                                            :style  {:border "1px dashed green"}
                                            :id     (:canvas-id state)}])

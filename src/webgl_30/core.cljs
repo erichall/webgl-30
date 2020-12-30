@@ -2,6 +2,7 @@
   (:require [webgl-30.component :refer [app]]
             [reagent.dom :as rd]))
 
+
 (defonce state-atom (atom nil))
 (def initial-state
   {:canvas-id        "main-canvas"
@@ -10,10 +11,12 @@
    :gl               nil
    :program          nil
    :attributes       []
-   :translation-rect {:x      0
-                      :y      0
-                      :width  200
-                      :height 50}
+   :uniforms         []
+   :translation-rect {:x        0
+                      :y        0
+                      :rotation 0
+                      :width    200
+                      :height   50}
    :active-shape     :f-shape
    :f-shape          {:offset 0
                       :count  18
@@ -39,9 +42,19 @@
                                30 90
                                67 60
                                67 90]}})
+(declare draw-scene! render-component)
 
 (when (nil? @state-atom)
-  (reset! state-atom initial-state))
+  (reset! state-atom initial-state)
+  (add-watch state-atom
+             :game-loop
+             (fn [_ _ _]
+               (render-component @state-atom)
+               (draw-scene! @state-atom)
+
+               ))
+  )
+
 
 (def shaders
   {
@@ -50,9 +63,14 @@
 
    uniform vec2 u_resolution;
    uniform vec2 u_translation;
+   uniform vec2 u_rotation;
 
     void main() {
-      vec2 position = a_position + u_translation;
+      vec2 rotatedPosition = vec2(
+        a_position.x * u_rotation.y + a_position.y * u_rotation.x,
+        a_position.y * u_rotation.y - a_position.x * u_rotation.x
+      );
+      vec2 position = rotatedPosition + u_translation;
       vec2 zeroToOne = position / u_resolution;
       vec2 zeroToTwo = zeroToOne * 2.0;
       vec2 clipSpace = zeroToTwo - 1.0;
@@ -60,6 +78,7 @@
       gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
     }
    "
+
    :fs "precision mediump float;
      uniform vec4 u_color;
      void main() {
@@ -167,7 +186,7 @@
 
 (defn initialize-gl!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
-  [{:keys [gl]} {:keys [vs fs]}]
+  [gl {:keys [vs fs]}]
   (let [vs (create-shader gl (.-VERTEX_SHADER gl) vs)
         fs (create-shader gl (.-FRAGMENT_SHADER gl) fs)
         program (create-program gl vs fs)]
@@ -176,55 +195,74 @@
     (bind-buffer gl (.-ARRAY_BUFFER gl))
     program))
 
+(defn set-attribute
+  [gl {:keys [location size type normalize stride offset]}]
+  ;; Turn the variable on inside our GLSL VS program above.
+  (.enableVertexAttribArray gl location)
+  ;; Describe how to take the data from our buffer and give it to our shader.
+  (.vertexAttribPointer gl location size type normalize stride offset))
+
+(defn set-uniform
+  [^js gl program {:keys [type name values]}]
+  (let [location (.getUniformLocation gl program name)]
+    (condp = type
+      :uniform2fv (.uniform2fv gl location values)
+      :uniform4fv (.uniform4fv gl location values))))
+
 (defn draw-scene!
-  [{:keys [gl attributes program] :as state}]
-  (let [uniform-location (.getUniformLocation gl program "u_resolution")
-        translation-location (.getUniformLocation gl program "u_translation")]
+  [{:keys [gl attributes uniforms program] :as state}]
+  (resize-canvas-to-display-size gl)
+  (set-gl-viewport! gl)
+  (clear-canvas! gl)
 
-    (resize-canvas-to-display-size gl)
-    (set-gl-viewport! gl)
-    (clear-canvas! gl)
+  ;; the program contains our two shaders, vertex and fragment shader. tell WebGL that we want to run them!
+  (.useProgram gl program)
 
-    ;; the program contains our two shaders, vertex and fragment shader. tell WebGL that we want to run them!
-    (.useProgram gl program)
+  (doseq [uniform uniforms]
+    (set-uniform gl program uniform))
 
-    ;; set the resolution
-    (.uniform2f gl uniform-location (aget gl "canvas" "width") (aget gl "canvas" "height"))
-    (.uniform2fv gl translation-location [(get-in state [:translation-rect :x])
-                                          (get-in state [:translation-rect :y])])
+  (doseq [attribute attributes]
+    (set-attribute gl attribute))
 
-    (doseq [{:keys [location size type normalize stride offset]} attributes]
-      ;; Turn the variable on inside our GLSL VS program above.
-      (.enableVertexAttribArray gl location)
-      ;; Describe how to take the data from our buffer and give it to our shader.
-      (.vertexAttribPointer gl location size type normalize stride offset))
+  (let [{:keys [offset count]} (get state (:active-shape state))]
 
-    (let [uniform-color-location (.getUniformLocation gl program "u_color")
-          {:keys [offset count]} (get state (:active-shape state))]
-      ;; we only have to do this once
-      ;(set-rectangle! gl (:translation-rect state))
+    ;; actually draw it
+    (.drawArrays gl (.-TRIANGLES gl) offset count))
+  state)
 
-      ;; set the color
-      (.uniform4f gl uniform-color-location 0.3 0 0 1)
+(defn set-uniform-values
+  [{:keys [uniforms]} uniform-name values]
+  (reduce (fn [acc {:keys [name] :as uniform}]
+            (if (= uniform-name name)
+              (conj acc (assoc uniform :values values))
+              (conj acc uniform))) [] uniforms))
 
-      ;; actually draw it
-      (.drawArrays gl (.-TRIANGLES gl) offset count))
-    state))
+(defn xy-radians
+  [angle]
+  (let [radians (/ (* angle Math/PI) 180)]
+    [(Math/sin radians) (Math/cos radians)]
+    )
+  )
 
 (defn handle-event!
   [name data]
   (condp = name
-    :x-change (swap! state-atom (fn [state]
+    :x-change (swap! state-atom (fn [{:keys [translation-rect] :as state}]
                                   (-> (assoc-in state [:translation-rect :x] data)
-                                      draw-scene!)))
-    :y-change (swap! state-atom (fn [state]
+                                      (assoc :uniforms (set-uniform-values state "u_translation" [data (:y translation-rect)])))))
+    :y-change (swap! state-atom (fn [{:keys [translation-rect] :as state}]
                                   (-> (assoc-in state [:translation-rect :y] data)
-                                      draw-scene!)))
+                                      (assoc :uniforms (set-uniform-values state "u_translation" [(:x translation-rect) data])))))
+    :rotation-change (swap! state-atom (fn [state]
+                                         (-> (assoc-in state [:translation-rect :rotation] data)
+                                             (assoc :uniforms (set-uniform-values state "u_rotation" (xy-radians data))))))
+    :canvas-did-mount (swap! state-atom (fn [{:keys [attributes uniforms canvas-id] :as state}]
+                                          (let [canvas (js/document.querySelector (str "#" canvas-id))
+                                                gl (.getContext canvas "webgl")
+                                                program (initialize-gl! gl shaders)]
 
-    :canvas-ref (swap! state-atom assoc :gl (.getContext data "webgl"))
-    :canvas-did-mount (swap! state-atom (fn [{:keys [gl attributes] :as state}]
-                                          (let [program (initialize-gl! state shaders)]
-                                            (-> (assoc state :program program)
+                                            (-> (assoc state :gl gl)
+                                                (assoc :program program)
                                                 (assoc :attributes (conj attributes
                                                                          {:location  (.getAttribLocation gl program "a_position")
                                                                           :size      2
@@ -232,8 +270,24 @@
                                                                           :normalize false
                                                                           :stride    0
                                                                           :offset    0}))
-                                                (set-geometry! (get-in state [(:active-shape state) :shape]))
-                                                draw-scene!))))
+                                                (assoc :uniforms (conj uniforms
+                                                                       {:type   :uniform2fv
+                                                                        :name   "u_resolution"
+                                                                        :values [(aget gl "canvas" "width")
+                                                                                 (aget gl "canvas" "height")]}
+                                                                       {:type   :uniform2fv
+                                                                        :name   "u_translation"
+                                                                        :values [(get-in state [:translation-rect :x])
+                                                                                 (get-in state [:translation-rect :y])]}
+                                                                       {:type   :uniform4fv
+                                                                        :name   "u_color"
+                                                                        :values [0.3 0.8 0 1]}
+                                                                       {:type   :uniform2fv
+                                                                        :name   "u_rotation"
+                                                                        :values [0 1]}
+                                                                       ))
+                                                (set-geometry! (get-in state [(:active-shape state) :shape]))))))
+
 
     nil))
 
@@ -245,6 +299,7 @@
 
 (defn init! []
   (render-component @state-atom))
+
 (defn reload! []
   (render-component @state-atom))
 

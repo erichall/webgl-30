@@ -203,7 +203,7 @@ of the object.
 The 2d rotating chapter from [webglfundamentals.org](https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html). 
 
 So far, both color, translation and rotating has been done by adding a uniform variable in our vertex shader and
-doing some math on it. The vertex shader now looks like this
+doing some math on it. The vertex shader now looks like this:
 ```
    attribute vec2 a_position;
 
@@ -223,7 +223,7 @@ doing some math on it. The vertex shader now looks like this
 
       gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
 ```
-and then 'binding' it or what you would like to call it when we draw later on. I did some 
+then 'binding' it or what you would like to call it when we draw later on. I did some 
 refactoring to our uniform variables since they started to grow.
 
 They are now initialized when our canvas has been mounted, I guess maybe you don't want to add more
@@ -264,11 +264,11 @@ where `set-uniform` is defined as
 ```
 
 Not really sure what is going on with the `uniformXXX` functions and cljs.
-there are two functions, one is called `uniform2f` and the other one is called `uniform2fv`, with a `v` in the end.
-but they seems to be doing the same thing but the latter one works with a list as argument...
+there are two functions, one is called `uniform2f` and the other one is called `uniform2fv`, with a `v` in the end,
+but they seem to be doing the same thing, the latter one works with a list as argument...
 I spent, 40 min trying to partially apply the function because of the variable arguments but
 without any success.. 
-like, why dosn't this work
+like, why doesn't this work
 ```clojurue
 (apply (partial (.-uniform2f gl) location) [1 2 3]) ;; => Uncaught TypeError: Illegal invocation....
 ```
@@ -282,3 +282,110 @@ you can't really see the state inside the gl variable, or maybe there is a way t
 
 I guess it's still kinda awkward to deal with one of your "local" state in a atom, and then inside this state atom, I've put the
 gl context which is being mutated on.
+
+---
+
+### 4/30
+
+##### What the heck did we do yesterday?
+Full on rotation! Had lots of struggle with `uniform4f` and how to apply a list of arguments. It seems that the difference between 
+these functions are just the argument?
+```
+gl.uniform4f (vec4UniformLoc,  v0, v1, v2, v4);    // for vec4
+gl.uniform4fv(vec4UniformLoc,  [v0, v1, v2, v4]);  // for vec4 or vec4 array
+``` 
+Well, with some help from cljs-slack I finally got a working variadic argument js function call together, like this: 
+```clojure
+(.apply gl.uniform2f gl (into-array (cons location values)))
+```
+but if the `2f` and `2fv` is the same function it is way easier to just use the `2fv` variant I guess, but alteast we got 
+an example on how to do interop with js and apply a variadic set of arguments to a function.
+
+##### What did we do today?
+Scaling. A straight forward method after doing the translation part. Yet again, we added another uniform variable to our
+vertex shader 
+```vec2 scaledPosition = a_position * u_scale;```
+`scaledPosition` is not used instead of a_position. Since scaling is done in both x and y, `u_scale` is a 2d vector.
+
+I also finally managed to make multi arity function work with interop with JS from CLJS. The solution looks like this:
+```clojure
+(.apply gl.uniform2f gl (into-array (cons location values)))
+```
+The `set-uniform` function has now been morphed into it's current form - 
+```clojure
+(defn set-uniform
+  [^js gl program {:keys [type name values]}]
+  (let [location (.getUniformLocation gl program name)]
+    (if (clojure.string/ends-with? type "v")
+      (js-invoke gl type location values)
+      (.apply (aget gl type) gl (into-array (cons location values))))))
+```
+
+##### Moving forward?
+Next step is to take it forward with matrices instead of using tons of variables.
+
+##### Conclusion
+I guess we have the fundamentals set now for 2d WebGL, I believe the last step is to start using matrices. 
+
+I'm also not really sure if WebGL is the way to go. I mean, it is on such a low level, and most of the juicy stuff is done in the shaders. 
+Do we really want to write GLSL code in string format. Not sure... I think the other way to go is to use threeJS which I believe have
+abstracted away the GLSL part. 
+
+---
+
+### 5/30
+
+##### What the heck did we do yesterday?
+Scaling. By expanding our vertex shader with yet another variable. 
+
+##### What did we do today?
+We converted our Vertex shader from using tons of variables to matrices. While doing it, It's so awesome that people way way way 
+smarter than me has been able to come up with this, it's just genius! 
+
+Going from a `Vertex shader` that looks like this:
+```
+   attribute vec2 a_position;
+
+   uniform vec2 u_resolution;
+   uniform mat3 u_matrix;
+
+    void main() {
+      vec2 position = (u_matrix * vec3(a_position, 1)).xy;
+
+      // convert position to [0, 1]
+      vec2 zeroToOne = position / u_resolution;
+
+      // convert [0,1] -> [0,2]
+      vec2 zeroToTwo = zeroToOne * 2.0;
+
+      // to clip-space [0,2] -> [-1,1]
+      vec2 clipSpace = zeroToTwo - 1.0;
+
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    }
+```
+
+to one almost one line:
+```
+   attribute vec2 a_position;
+
+   uniform mat3 u_matrix;
+
+    void main() {
+      gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
+    }
+```
+with the help from some glorious math! 
+
+##### Moving forward?
+Next up is [drawing-fn](https://webglfundamentals.org/webgl/lessons/webgl-2d-drawimage.html)
+
+##### Conclusion
+Math and linear algebra is just awesome.
+
+---
+
+
+
+
+

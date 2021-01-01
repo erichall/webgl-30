@@ -14,6 +14,8 @@
    :uniforms         []
    :translation-rect {:x        0
                       :y        0
+                      :scale-x  1
+                      :scale-y  1
                       :rotation 0
                       :width    200
                       :height   50}
@@ -203,11 +205,12 @@
   (.vertexAttribPointer gl location size type normalize stride offset))
 
 (defn set-uniform
-  [^js gl program {:keys [type name values]}]
-  (let [location (.getUniformLocation gl program name)]
-    (condp = type
-      :uniform2fv (.uniform2fv gl location values)
-      :uniform4fv (.uniform4fv gl location values))))
+  [^js gl program {:keys [type name values transpose]}]
+  (let [location (.getUniformLocation gl program name)
+        values (if (some? transpose) (cons transpose [values]) values)]
+    (if (clojure.string/ends-with? type "v")
+      (apply js-invoke gl type location values)
+      (.apply (aget gl type) gl (into-array (cons location values))))))
 
 (defn draw-scene!
   [{:keys [gl attributes uniforms program] :as state}]
@@ -237,32 +240,30 @@
               (conj acc (assoc uniform :values values))
               (conj acc uniform))) [] uniforms))
 
-(defn xy-radians
-  [angle]
-  (let [radians (/ (* angle Math/PI) 180)]
-    [(Math/sin radians) (Math/cos radians)]
-    )
-  )
-
 (defn handle-event!
   [name data]
   (condp = name
-    :x-change (swap! state-atom (fn [{:keys [translation-rect] :as state}]
+    :x-change (swap! state-atom (fn [state]
                                   (-> (assoc-in state [:translation-rect :x] data)
-                                      (assoc :uniforms (set-uniform-values state "u_translation" [data (:y translation-rect)])))))
-    :y-change (swap! state-atom (fn [{:keys [translation-rect] :as state}]
+                                      (assoc :uniforms (set-uniform-values state "u_matrix" (compute-matrices state matrix-operation-2d))))))
+    :y-change (swap! state-atom (fn [state]
                                   (-> (assoc-in state [:translation-rect :y] data)
-                                      (assoc :uniforms (set-uniform-values state "u_translation" [(:x translation-rect) data])))))
+                                      (assoc :uniforms (set-uniform-values state "u_matrix" (compute-matrices state matrix-operation-2d))))))
     :rotation-change (swap! state-atom (fn [state]
                                          (-> (assoc-in state [:translation-rect :rotation] data)
-                                             (assoc :uniforms (set-uniform-values state "u_rotation" (xy-radians data))))))
+                                             (assoc :uniforms (set-uniform-values state "u_matrix" (compute-matrices state matrix-operation-2d))))))
+    :scale-x-change (swap! state-atom (fn [state]
+                                        (-> (assoc-in state [:translation-rect :scale-x] data)
+                                            (assoc :uniforms (set-uniform-values state "u_matrix" (compute-matrices state matrix-operation-2d))))))
+    :scale-y-change (swap! state-atom (fn [state]
+                                        (-> (assoc-in state [:translation-rect :scale-y] data)
+                                            (assoc :uniforms (set-uniform-values state "u_matrix" (compute-matrices state matrix-operation-2d))))))
     :canvas-did-mount (swap! state-atom (fn [{:keys [attributes uniforms canvas-id] :as state}]
                                           (let [canvas (js/document.querySelector (str "#" canvas-id))
                                                 gl (.getContext canvas "webgl")
-                                                program (initialize-gl! gl shaders)]
-
-                                            (-> (assoc state :gl gl)
-                                                (assoc :program program)
+                                                program (initialize-gl! gl shaders)
+                                                state (assoc state :gl gl)]
+                                            (-> (assoc state :program program)
                                                 (assoc :attributes (conj attributes
                                                                          {:location  (.getAttribLocation gl program "a_position")
                                                                           :size      2

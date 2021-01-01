@@ -52,35 +52,19 @@
              :game-loop
              (fn [_ _ _]
                (render-component @state-atom)
-               (draw-scene! @state-atom)
-
-               ))
-  )
-
+               (draw-scene! @state-atom))))
 
 (def shaders
   {
    :vs "
    attribute vec2 a_position;
 
-   uniform vec2 u_resolution;
-   uniform vec2 u_translation;
-   uniform vec2 u_rotation;
+   uniform mat3 u_matrix;
 
     void main() {
-      vec2 rotatedPosition = vec2(
-        a_position.x * u_rotation.y + a_position.y * u_rotation.x,
-        a_position.y * u_rotation.y - a_position.x * u_rotation.x
-      );
-      vec2 position = rotatedPosition + u_translation;
-      vec2 zeroToOne = position / u_resolution;
-      vec2 zeroToTwo = zeroToOne * 2.0;
-      vec2 clipSpace = zeroToTwo - 1.0;
-
-      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
     }
    "
-
    :fs "precision mediump float;
      uniform vec4 u_color;
      void main() {
@@ -186,6 +170,76 @@
   [range]
   (Math/floor (* range (Math/random))))
 
+(def matrix-operation-2d
+  {:translation (fn [tx ty]
+                  [1 0 0
+                   0 1 0
+                   tx ty 1])
+   :rotation    (fn [angle-radians]
+                  (let [c (Math/cos angle-radians)
+                        s (Math/sin angle-radians)]
+                    [c (- s) 0
+                     s c 0
+                     0 0 1]))
+   :scaling     (fn [sx sy]
+                  [sx 0 0
+                   0 sy 0
+                   0 0 1])
+   :projection  (fn [width height]
+                  ; flip y-axis so 0 is at top
+                  [(/ 2 width) 0 0
+                   0 (/ (- 2) height) 0
+                   -1 1 1])
+   :multiply    (fn [a b]
+                  (let [a00 (nth a (+ (* 0 3) 0))
+                        a01 (nth a (+ (* 0 3) 1))
+                        a02 (nth a (+ (* 0 3) 2))
+
+                        a10 (nth a (+ (* 1 3) 0))
+                        a11 (nth a (+ (* 1 3) 1))
+                        a12 (nth a (+ (* 1 3) 2))
+
+                        a20 (nth a (+ (* 2 3) 0))
+                        a21 (nth a (+ (* 2 3) 1))
+                        a22 (nth a (+ (* 2 3) 2))
+
+                        b00 (nth b (+ (* 0 3) 0))
+                        b01 (nth b (+ (* 0 3) 1))
+                        b02 (nth b (+ (* 0 3) 2))
+
+                        b10 (nth b (+ (* 1 3) 0))
+                        b11 (nth b (+ (* 1 3) 1))
+                        b12 (nth b (+ (* 1 3) 2))
+
+                        b20 (nth b (+ (* 2 3) 0))
+                        b21 (nth b (+ (* 2 3) 1))
+                        b22 (nth b (+ (* 2 3) 2))]
+                    [(+ (* b00 a00) (* b01 a10) (* b02 a20))
+                     (+ (* b00 a01) (* b01 a11) (* b02 a21))
+                     (+ (* b00 a02) (* b01 a12) (* b02 a22))
+                     (+ (* b10 a00) (* b11 a10) (* b12 a20))
+                     (+ (* b10 a01) (* b11 a11) (* b12 a21))
+                     (+ (* b10 a02) (* b11 a12) (* b12 a22))
+                     (+ (* b20 a00) (* b21 a10) (* b22 a20))
+                     (+ (* b20 a01) (* b21 a11) (* b22 a21))
+                     (+ (* b20 a02) (* b21 a12) (* b22 a22))]))})
+
+(defn xy-radians
+  [angle]
+  (let [radians (/ (* angle Math/PI) 180)]
+    [(Math/sin radians) (Math/cos radians)]))
+
+(defn compute-matrices
+  [{:keys [translation-rect gl]} {:keys [translation rotation scaling multiply projection]}]
+  (let [{:keys [x y scale-x scale-y]} translation-rect
+        translation-matrix (translation x y)
+        rotation-matrix (rotation (:rotation translation-rect))
+        scale-matrix (scaling scale-x scale-y)
+        projection-matrix (projection (aget gl "canvas" "width") (aget gl "canvas" "height"))]
+    (-> (multiply projection-matrix translation-matrix)
+        (multiply rotation-matrix)
+        (multiply scale-matrix))))
+
 (defn initialize-gl!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
   [gl {:keys [vs fs]}]
@@ -272,22 +326,15 @@
                                                                           :stride    0
                                                                           :offset    0}))
                                                 (assoc :uniforms (conj uniforms
-                                                                       {:type   :uniform2fv
-                                                                        :name   "u_resolution"
-                                                                        :values [(aget gl "canvas" "width")
-                                                                                 (aget gl "canvas" "height")]}
-                                                                       {:type   :uniform2fv
-                                                                        :name   "u_translation"
-                                                                        :values [(get-in state [:translation-rect :x])
-                                                                                 (get-in state [:translation-rect :y])]}
-                                                                       {:type   :uniform4fv
+                                                                       {:type   "uniform4f"
                                                                         :name   "u_color"
                                                                         :values [0.3 0.8 0 1]}
-                                                                       {:type   :uniform2fv
-                                                                        :name   "u_rotation"
-                                                                        :values [0 1]}
-                                                                       ))
+                                                                       {:type      "uniformMatrix3fv"
+                                                                        :name      "u_matrix"
+                                                                        :transpose false
+                                                                        :values    (compute-matrices state matrix-operation-2d)}))
                                                 (set-geometry! (get-in state [(:active-shape state) :shape]))))))
+
 
 
     nil))

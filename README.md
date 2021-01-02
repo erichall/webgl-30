@@ -385,6 +385,26 @@ Math and linear algebra is just awesome.
 
 ---
 
+### 6/30
+
+##### What the heck did we do yesterday?
+Refactoring into using matrices instead of multiple variables to handle scaling, transformation, projection and rotation.
+
+##### What did we do today?
+Started to work through the drawing-fn part of webglfundamentals. Lots of work left though.
+
+##### Moving forward?
+Continue with the [drawing-fn](https://webglfundamentals.org/webgl/lessons/webgl-2d-drawimage.html)
+
+##### Conclusion
+I'm still impressed of the refactoring to matrices, even though the actual matrix multiplication is super hardcoded. 
+
+---
+
+
+
+
+
 
 
 

@@ -401,6 +401,24 @@ I'm still impressed of the refactoring to matrices, even though the actual matri
 
 ---
 
+### 7/30
+
+##### What the heck did we do yesterday?
+Only some minor refactorings.
+
+##### What did we do today?
+Orthographic 3D. We turned our F into 3d. Tbh, after doing this part, It feels like going down the 3d path is...daunting.
+I mean, I'm never going to write custom 3d stuff like this so, I'm not sure what to take from it. Other than that, it was really 
+not that much different from 2d for this part, just adding a ton of more data due the z-dimension. Still fun to have done it though! 
+
+##### Moving forward?
+I stumbled upon the Orthographic 3D stuff just because it was a prerequisite for the draw-image part. Not sure what to take on next. 
+if we keep going the 3d path, we will start with animations and cameras which is quite cool. I guess we keep going.
+
+##### Conclusion
+I wanted to abstract the matrix multiplication, but it seems that I failed at doing that, or there is an error somewhere, and I can't find it..!
+
+---
 
 
 

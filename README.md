@@ -420,6 +420,48 @@ I wanted to abstract the matrix multiplication, but it seems that I failed at do
 
 ---
 
+### 8/30
+
+##### What the heck did we do yesterday?
+Ventured out in 3d space and got kinda scared. I guess this is something to conclude about WebGL; WebGL is not a 3d library. 
+WebGL is more of an API that enables you to make 2d or 3d stuff. It gives you a toon of tools to help you do it but you still have
+to provide all the jazz; you have to provide it with clip-space coordinates, do the interpolation, normalize your coordinates etc etc. 
+WebGL just draws your vertices, and that's it. Comparing this to an actual 3d Library, like Three.js, where you can provide objects but
+all the low level stuff are abstracted away from you. I guess this is what I came to realize after a couple of days following 
+the excellent tutorials from [webglfundamentals.org](https://webglfundamentals.org/). It's fun an all but to venture out on a 
+project on your own with WebGL as your primary tool is something I'm clearly not ready for. 
+
+But I'm still torn between going low level and not. I really don't like to use libs but sometimes I guess it's unavoidable. 
+
+Still though, let's keep at it with WebGL! the goal now is to move forward with [WebGL Implementing DrawImage](https://webglfundamentals.org/webgl/lessons/webgl-2d-drawimage.html)
+but in order to do that we had to learn about [Orthographic 3D](https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html)
+and [WebGL Textures](https://webglfundamentals.org/webgl/lessons/webgl-3d-textures.html). 
+
+But in order to do Textures we need to know some more stuff, so when going down the rabbit hole, we end up with [WebGL 3D Perspective](https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html)
+ 
+
+##### What did we do today?
+I know more about 3d perspective now! or I think.... Went over fudgeFactor which made the z dimension scale up and down. Or it's 
+not really the z-dimension, it is rather the 'w-dimension' which I'm not really sure of what it is, depth?? 
+It is not, from stack-overflow: 'W is the fourth coordinate of a three-dimensional vertex; This vertex is called homogeneous vertex coordinate.'
+The comment goes on saying that `w` is the dimension that divides the others, so when `w=1` the coordinate system is normalized.
+
+Found out that we could go on reading this official OpenGL book: [red-book](http://glprogramming.com/red/).
+
+We also did some refactoring and adding new namespaces. `shapes.cljs, webgl.cljs, math.cljs` I'm thinking of handling `webgl.cljs`
+as a small lib that handle all WebGL shenanigans.
+
+##### Moving forward?
+To end up the 2d drawImage we need to know about cameras!
+
+##### Conclusion
+We added even more matric multiplication. I mean, it's one thing to follow a tutorial, and it's another thing to twink it up
+on your own. I guess I'm not really learning when doing the matrix calculations without any pen or paper, is it 3 years now since
+I took the linear algebra and multi vector analysis course math?!
+
+---
+
+
 
 
 

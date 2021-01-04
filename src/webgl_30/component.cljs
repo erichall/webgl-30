@@ -33,31 +33,31 @@
      [:td
       [slider {:value     (get-in state [:translation-rect :x])
                :id        :rect-x
-               :min       0
-               :max       (get-in state [:canvas-dim :width])
+               :min       (- 200)
+               :max       200
                :on-change (fn [val] (trigger-event :data-change {:path  [:translation-rect :x]
                                                                  :value val}))}]]
      [:td [:span (get-in state [:translation-rect :x])]]]
     [:tr
      [:td [:span "y"]]
      [:td [slider {:value     (get-in state [:translation-rect :y])
-                   :min       0
                    :id        :rect-y
-                   :max       (get-in state [:canvas-dim :height])
+                   :min       (- 200)
+                   :max       200
                    :on-change (fn [val] (trigger-event :data-change {:path  [:translation-rect :y]
                                                                      :value val}))}]]
      [:td [:span (get-in state [:translation-rect :y])]]]
     [:tr
      [:td [:span "z"]]
      [:td [slider {:value     (get-in state [:translation-rect :z])
-                   :min       0
+                   :min       -1000
+                   :max       1
                    :id        :rect-z
-                   :max       (get-in state [:canvas-dim :height])
                    :on-change (fn [val] (trigger-event :data-change {:path  [:translation-rect :z]
                                                                      :value val})
                                 )}]]
 
-     [:td [:span (get-in state [:translation-rect :y])]]]
+     [:td [:span (get-in state [:translation-rect :z])]]]
     [:tr
      [:td [:span "rot-x"]]
      [:td [slider {:value     (rad->deg (get-in state [:translation-rect :rotation-x]))
@@ -131,6 +131,17 @@
                                 (trigger-event :data-change {:path  [:translation-rect :scale-z]
                                                              :value val}))}]]
      [:td [:span (get-in state [:translation-rect :scale-z])]]]
+    [:tr
+     [:td [:span {:style {:white-space "nowrap"}} "field-of-view"]]
+     [:td [slider {:value     (rad->deg (get-in state [:translation-rect :field-of-view]))
+                   :id        :field-of-view
+                   :step      0.01
+                   :min       0
+                   :max       360
+                   :on-change (fn [val]
+                                (trigger-event :data-change {:path  [:translation-rect :field-of-view]
+                                                             :value (deg->rad val)}))}]]
+     [:td [:span (rad->deg (get-in state [:translation-rect :field-of-view]))]]]
     ]
    ])
 

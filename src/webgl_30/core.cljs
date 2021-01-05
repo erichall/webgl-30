@@ -14,6 +14,7 @@
    :program          nil
    :attributes       []
    :uniforms         []
+   :camera           {:angle-rad (math/deg->rad 0)}
    :translation-rect {:x             (- 150)
                       :y             0
                       :z             (- 360)
@@ -104,24 +105,14 @@
                    -1 1 1])})
 
 (def matrix-operation-3d
-  {:translation (fn [tx ty tz]
-                  [1 0 0 0
-                   0 1 0 0
-                   0 0 1 0
-                   tx ty tz 1])
+  {:translation math/translate-3d
    :rotation-x  (fn [angle-radians]
                   (let [[c s] (math/cos-sin angle-radians)]
                     [1 0 0 0
                      0 c s 0
                      0 (- s) c 0
                      0 0 0 1]))
-   :rotation-y  (fn [angle-radians]
-                  (let [[c s] (math/cos-sin angle-radians)]
-                    [c 0 (- s) 0
-                     0 1 0 0
-                     s 0 c 0
-                     0 0 0 1
-                     ]))
+   :rotation-y  math/rotation-3d-y
    :rotation-z  (fn [angle-radians]
                   (let [[c s] (math/cos-sin angle-radians)]
                     [c s 0 0
@@ -144,16 +135,7 @@
                    0 1 0 0
                    0 0 1 fudge-factor
                    0 0 0 0 1])
-   :perspective (fn [field-of-view-in-radians aspect near far]
-                  (let [f (Math/tan (- (* Math/PI 0.5)
-                                       (* 0.5 field-of-view-in-radians)))
-                        range-in-view (/ 1.0 (- near far))]
-                    [(/ f aspect) 0 0 0
-                     0 f 0 0
-                     0 0 (* range-in-view (+ near far)) (- 1)
-                     0 0 (* near far range-in-view 2) 0]
-                    )
-                  )
+   :perspective math/perspective-matrix
    })
 
 (defn compute-matrices
@@ -166,7 +148,7 @@
         scale-matrix (scaling scale-x scale-y scale-z)
         z->w-matrix (z->w fudge-factor)
         projection-matrix (projection (aget gl "canvas" "clientWidth") (aget gl "canvas" "clientHeight") 400)
-        aspect (/ (aget gl "canvas" "clientWidth") (aget gl "canvas" "clientHeight"))
+        aspect (webgl/get-aspect gl)
         perspective-matrix (perspective field-of-view aspect z-near z-far)
         ]
     (-> (math/matrix-multiply-3d perspective-matrix translation-matrix)
@@ -191,10 +173,6 @@
   (webgl/set-gl-viewport! gl)
   (webgl/clear-canvas! gl)
 
-  ;(.enable gl (.-CULL_FACE gl))
-  ;(.enable gl (.-DEPTH_TEST gl))
-
-
   ;; the program contains our two shaders, vertex and fragment shader. tell WebGL that we want to run them!
   (.useProgram gl program)
 
@@ -205,10 +183,24 @@
     (webgl/bind-buffer state buffer buffer-type)
     (webgl/set-attribute gl attribute))
 
-  (let [{:keys [offset count]} (get state (:active-shape state))]
+  (let [z-near 1
+        z-far 2000
+        aspect (webgl/get-aspect gl)
+        projection-matrix (math/perspective-matrix (get-in state [:translation-rect :field-of-view])
+                                                   aspect
+                                                   z-near
+                                                   z-far)
+        camera-matrix (-> (math/rotation-3d-y (get-in state [:camera :angle-rad]))
+                          (math/matrix-multiply-3d (math/translate-3d 0 0 (* 200 1.5))))]
+    (doseq [ii (range 5)]
+      (let [{:keys [offset count]} (get state (:active-shape state))
+            angle (/ (* ii Math/PI 2) 5)
+            x (* (Math/cos angle) 200)
+            y (* (Math/sin angle) 200)
+            ]
 
-    ;; actually draw it
-    (.drawArrays gl (.-TRIANGLES gl) offset count))
+        ;; actually draw it
+        (.drawArrays gl (.-TRIANGLES gl) offset count))))
   state)
 
 (defn set-uniform-values

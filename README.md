@@ -455,15 +455,55 @@ as a small lib that handle all WebGL shenanigans.
 To end up the 2d drawImage we need to know about cameras!
 
 ##### Conclusion
-We added even more matric multiplication. I mean, it's one thing to follow a tutorial, and it's another thing to twink it up
+We added even more matrix multiplication. I mean, it's one thing to follow a tutorial, and it's another thing to twink it up
 on your own. I guess I'm not really learning when doing the matrix calculations without any pen or paper, is it 3 years now since
 I took the linear algebra and multi vector analysis course math?!
 
 ---
 
+### 9/30
+
+##### What the heck did we do yesterday?
+Set aside the whining over 3D stuff is hard, we added a perspective to our lovely `F` by doing some glorious matrix multiplication.
+Instead of projecting our world with this matrix:
+```clojure
+  :projection  (fn [width height depth]
+                  ; flip y-axis so 0 is at top
+                  [(/ 2 width) 0 0 0
+                   0 (/ (- 2) height) 0 0
+                   0 0 (/ 2 depth) 0
+                   -1 1 0 1])
+```
+we now have a depth perspective by doing multiplication with this matrix
+```clojure
+   :perspective (fn [field-of-view-in-radians aspect near far]
+                  (let [f (Math/tan (- (* Math/PI 0.5)
+                                       (* 0.5 field-of-view-in-radians)))
+                        range-in-view (/ 1.0 (- near far))]
+                    [(/ f aspect) 0 0 0
+                     0 f 0 0
+                     0 0 (* range-in-view (+ near far)) (- 1)
+                     0 0 (* near far range-in-view 2) 0]))
+```
+
+we did add something called frustum, or viewing frustum. I had no idea what that was before, but it's the region of where a 3d model appears on the screen.
+When peeking on today's mission, I came to understand why the F is not visible if we not move it manually. The reason for this is that we 
+have put the F right on top of you, at (0,0,0) and thats why you don't see it at first. I guess this is what cameras are for!
+
+Found some OG tutorial for matrixes and viewing: (https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection)[https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection]
 
 
+##### What did we do today?
+Not much, dabbed into matrices, it sores my eye to have it hardcoded like this but I couldn't manage to neither install
+`clojure.core.matrix` or come up with a better solution to the current impl, at least it's fast.
 
+##### Moving forward?
+Go on with cameras.
+
+##### Conclusion
+Sometimes, the tooling stuff around clojure can be quite frustrating.
+
+---
 
 
 

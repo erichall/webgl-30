@@ -73,9 +73,13 @@
   ;; Describe how to take the data from our buffer and give it to our shader.
   (.vertexAttribPointer gl location size type normalize stride offset))
 
+(defn get-uniform-location
+  [gl program name]
+  (.getUniformLocation gl program name))
+
 (defn set-uniform
   [^js gl program {:keys [type name values transpose]}]
-  (let [location (.getUniformLocation gl program name)
+  (let [location (get-uniform-location gl program name)
         values (if (some? transpose) (cons transpose [values]) values)]
     (if (clojure.string/ends-with? type "v")
       (if (vector? values)

@@ -505,6 +505,38 @@ Sometimes, the tooling stuff around clojure can be quite frustrating.
 
 ---
 
+### 10/30
+
+##### What the heck did we do yesterday?
+We added perspective and changed our projection matrices because we added frustum to our view. Frustum changes our view so objects appears
+further away. We did this by some shenanigans matrix multiplication.
+
+##### What did we do today?
+Completed the camera tutorial. Spent half the night with a parenthesis mistake:
+```clojure
+(defn cross-product-spot-the-incorrect-()
+  [a b]
+  [(- (* (nth a 1) (nth b 2) (* (nth a 2) (nth b 1))))
+   (- (* (nth a 2) (nth b 0) (* (nth a 0) (nth b 2))))
+   (- (* (nth a 0) (nth b 1) (* (nth a 1) (nth b 0))))])
+```
+
+We also added a hugmongos hardcoded inverse 4x4 matrix operation. I remember doing inverted matrices with pen and paper... it was fun!
+I tested to make a dynamic one but gave up after some time...
+
+##### Moving forward?
+Finally, at animations!
+
+##### Conclusion
+It is actually quite cool what we have accomplished with this raw stuff. I mean, there is no game engine or something behind this, 
+we actually have a fully custom camera which we can lock at an object and rotate around it. In like 100 rows of code?!
+
+---
+
+
+
+
+
 
 
 

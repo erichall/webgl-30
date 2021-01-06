@@ -23,21 +23,25 @@
                         (let [val (js/parseFloat (.. evt -target -value))]
                           (on-change val)))}])
 
+(defn slider-row
+  [label value min max on-change]
+  [:tr
+   [:td label]
+   [:td
+    [slider {:value     value
+             :id        :rect-x
+             :min       min
+             :max       max
+             :on-change on-change}]]
+   [:td [:span value]]])
+
 (defn slider-component
   [{:keys [state trigger-event]}]
   [:table {:style {:width        "200px"
                    :table-layout "fixed"}}
    [:tbody
-    [:tr
-     [:td "x"]
-     [:td
-      [slider {:value     (get-in state [:translation-rect :x])
-               :id        :rect-x
-               :min       (- 200)
-               :max       200
-               :on-change (fn [val] (trigger-event :data-change {:path  [:translation-rect :x]
-                                                                 :value val}))}]]
-     [:td [:span (get-in state [:translation-rect :x])]]]
+    [slider-row "x" (get-in state [:translation-rect :x]) (- 200) 200 (fn [val] (trigger-event :data-change {:path  [:translation-rect :x]
+                                                                                                             :value val}))]
     [:tr
      [:td [:span "y"]]
      [:td [slider {:value     (get-in state [:translation-rect :y])
@@ -142,6 +146,12 @@
                                 (trigger-event :data-change {:path  [:translation-rect :field-of-view]
                                                              :value (deg->rad val)}))}]]
      [:td [:span (rad->deg (get-in state [:translation-rect :field-of-view]))]]]
+
+    [slider-row "camera" (int (rad->deg (get-in state [:camera :angle-rad]))) 0 360
+     (fn [val]
+       (trigger-event :data-change {:path  [:camera :angle-rad]
+                                    :value (deg->rad val)}))
+     ]
     ]
    ])
 

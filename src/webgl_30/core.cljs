@@ -20,7 +20,7 @@
                       :z             (- 360)
                       :z-near        1
                       :z-far         2000
-                      :field-of-view 0
+                      :field-of-view (math/deg->rad 60)
                       :scale-x       1
                       :scale-y       1
                       :scale-z       1
@@ -186,18 +186,30 @@
   (let [z-near 1
         z-far 2000
         aspect (webgl/get-aspect gl)
+        matrix-location (webgl/get-uniform-location gl program "u_matrix")
         projection-matrix (math/perspective-matrix (get-in state [:translation-rect :field-of-view])
                                                    aspect
                                                    z-near
                                                    z-far)
+        f-position [200 0 0]                                ;; position of first F
         camera-matrix (-> (math/rotation-3d-y (get-in state [:camera :angle-rad]))
-                          (math/matrix-multiply-3d (math/translate-3d 0 0 (* 200 1.5))))]
+                          (math/matrix-multiply-3d (math/translate-3d 0 0 (* 200 1.5))))
+        camera-position [(nth camera-matrix 12) (nth camera-matrix 13) (nth camera-matrix 14)]
+
+        up [0 1 0]
+        view-matrix (-> (math/look-at-matrix camera-position f-position up)
+                        math/invert-4x4)
+        vp-matrix (math/matrix-multiply-3d projection-matrix view-matrix)]
     (doseq [ii (range 5)]
       (let [{:keys [offset count]} (get state (:active-shape state))
             angle (/ (* ii Math/PI 2) 5)
             x (* (Math/cos angle) 200)
             y (* (Math/sin angle) 200)
+
+            m (math/matrix-multiply-3d vp-matrix (math/translate-3d x 0 y))
             ]
+
+        (.uniformMatrix4fv gl matrix-location false m)
 
         ;; actually draw it
         (.drawArrays gl (.-TRIANGLES gl) offset count))))

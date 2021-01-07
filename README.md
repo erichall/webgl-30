@@ -425,9 +425,9 @@ I wanted to abstract the matrix multiplication, but it seems that I failed at do
 ##### What the heck did we do yesterday?
 Ventured out in 3d space and got kinda scared. I guess this is something to conclude about WebGL; WebGL is not a 3d library. 
 WebGL is more of an API that enables you to make 2d or 3d stuff. It gives you a toon of tools to help you do it but you still have
-to provide all the jazz; you have to provide it with clip-space coordinates, do the interpolation, normalize your coordinates etc etc. 
-WebGL just draws your vertices, and that's it. Comparing this to an actual 3d Library, like Three.js, where you can provide objects but
-all the low level stuff are abstracted away from you. I guess this is what I came to realize after a couple of days following 
+to provide all the jazz; you have to provide it with clip-space coordinates, do the interpolation, normalize your coordinates etc. 
+WebGL just draws your vertices, and that's it. Comparing this to an actual 3d Library, like Three.js, that abstract away low level stuff 
+but still enables you to provide your own objects. I guess this is what I came to realize after a couple of days following 
 the excellent tutorials from [webglfundamentals.org](https://webglfundamentals.org/). It's fun an all but to venture out on a 
 project on your own with WebGL as your primary tool is something I'm clearly not ready for. 
 
@@ -488,13 +488,13 @@ we now have a depth perspective by doing multiplication with this matrix
 
 we did add something called frustum, or viewing frustum. I had no idea what that was before, but it's the region of where a 3d model appears on the screen.
 When peeking on today's mission, I came to understand why the F is not visible if we not move it manually. The reason for this is that we 
-have put the F right on top of you, at (0,0,0) and thats why you don't see it at first. I guess this is what cameras are for!
+have put the F right on top of you, at (0,0,0) and that's why you don't see it at first. I guess this is what cameras are for!
 
-Found some OG tutorial for matrixes and viewing: (https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection)[https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection]
+Found some OG tutorial for matrixes and viewing: [https://developer.mozilla.org/](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection)
 
 
 ##### What did we do today?
-Not much, dabbed into matrices, it sores my eye to have it hardcoded like this but I couldn't manage to neither install
+Not much, dabbed into matrices, it sores my eye to have it hardcoded like this, but I couldn't manage to neither install
 `clojure.core.matrix` or come up with a better solution to the current impl, at least it's fast.
 
 ##### Moving forward?
@@ -533,11 +533,39 @@ we actually have a fully custom camera which we can lock at an object and rotate
 
 ---
 
+### 11/30
 
+##### What the heck did we do yesterday?
+Refresh some linear algebra awesomeness on how to invert matrices, banged our heads against a parenthesis mistake and 
+doing some cool camera rotation. 
 
+The rotation is done by fixating a line between the camera, and the object we want to look at, this is done by subtracting the 
+camera angle with the target angle, this is what we calle the 'z-axis', we need find the x and y-axis by using the cross product between them.
 
+##### What did we do today?
+Animation. It's funny when you design something, and it turns out awful. Well, now I know that my draw-scene function together with the
+rest of the stuff that we have is not really equipped to deal with RAF.
 
+##### Moving forward?
+Textures.
 
+##### Conclusion
+We need to figure out a good refactoring out of this. Though, animation has nothing to do with WebGL.
 
+---
+### 12/30
 
+##### What the heck did we do yesterday?
+Realised that we have a huge mess now and are in dire need of some refactoring.
+
+##### What did we do today?
+Doing refactoring but it's late now!
+
+##### Moving forward?
+Refactoring!
+
+##### Conclusion
+Refactoring!
+
+---
 

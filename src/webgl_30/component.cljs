@@ -156,18 +156,20 @@
    ])
 
 (defn webgl-canvas
-  [{:keys [state trigger-event]}]
+  [{:keys [height width id on-mount]}]
   (r/create-class
     {:display-name        "webgl-canvas"
-     :reagent-render      (fn [] [:canvas {:width  (str (get-in state [:canvas-dim :width]) "px")
-                                           :height (str (get-in state [:canvas-dim :height]) "px")
+     :reagent-render      (fn [] [:canvas {:width  (str width "px")
+                                           :height (str height "px")
                                            :style  {:border "1px dashed green"}
-                                           :id     (:canvas-id state)}])
-     :component-did-mount (fn [] (trigger-event :canvas-did-mount))}))
+                                           :id     id}])
+     :component-did-mount on-mount}))
 
 (defn app
   [{:keys [state trigger-event]}]
   [:div
    [slider-component {:trigger-event trigger-event
                       :state         state}]
+   [:div {:style    {:border "1px dashed orange"}
+          :on-click (fn [] (trigger-event :toggle-animation))} (if (get-in state [:animate :running?]) "Stop" "Play")]
    [webgl-canvas {:trigger-event trigger-event :state state}]])

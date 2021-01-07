@@ -201,9 +201,7 @@
         t3 (- (+ (* tmp-5 m01) (* tmp-8 m11) (* tmp-11 m21))
               (+ (* tmp-4 m01) (* tmp-9 m11) (* tmp-10 m21)))
 
-        det (/ 1.0 (+ (* m00 t0) (* m10 t1) (* m20 t2) (* m30 t3)))
-        ]
-    (println m00 t0 m10 t1 m20 t2 m30 t3)
+        det (/ 1.0 (+ (* m00 t0) (* m10 t1) (* m20 t2) (* m30 t3)))]
     [(* det t0)
      (* det t1)
      (* det t2)
@@ -276,5 +274,61 @@
      (nth y-axis 0) (nth y-axis 1) (nth y-axis 2) 0
      (nth z-axis 0) (nth z-axis 1) (nth z-axis 2) 0
      (nth camera-position 0) (nth camera-position 1) (nth camera-position 2) 1]))
+
+(def matrix-operation-2d
+  {:translation (fn [tx ty]
+                  [1 0 0
+                   0 1 0
+                   tx ty 1])
+   :rotation    (fn [angle-radians]
+                  (let [c (Math/cos angle-radians)
+                        s (Math/sin angle-radians)]
+                    [c (- s) 0
+                     s c 0
+                     0 0 1]))
+   :scaling     (fn [sx sy]
+                  [sx 0 0
+                   0 sy 0
+                   0 0 1])
+   :projection  (fn [width height]
+                  ; flip y-axis so 0 is at top
+                  [(/ 2 width) 0 0
+                   0 (/ (- 2) height) 0
+                   -1 1 1])})
+
+(def matrix-operation-3d
+  {:translation translate-3d
+   :rotation-x  (fn [angle-radians]
+                  (let [[c s] (cos-sin angle-radians)]
+                    [1 0 0 0
+                     0 c s 0
+                     0 (- s) c 0
+                     0 0 0 1]))
+   :rotation-y  rotation-3d-y
+   :rotation-z  (fn [angle-radians]
+                  (let [[c s] (cos-sin angle-radians)]
+                    [c s 0 0
+                     (- s) c 0 0
+                     0 0 1 0
+                     0 0 0 1]))
+   :scaling     (fn [sx sy sz]
+                  [sx 0 0 0
+                   0 sy 0 0
+                   0 0 sz 0
+                   0 0 0 1])
+   :projection  (fn [width height depth]
+                  ; flip y-axis so 0 is at top
+                  [(/ 2 width) 0 0 0
+                   0 (/ (- 2) height) 0 0
+                   0 0 (/ 2 depth) 0
+                   -1 1 0 1])
+   :z->w        (fn [fudge-factor]
+                  [1 0 0 0
+                   0 1 0 0
+                   0 0 1 fudge-factor
+                   0 0 0 0 1])
+   :perspective perspective-matrix
+   })
+
 
 

@@ -14,6 +14,7 @@
    :program          nil
    :attributes       []
    :uniforms         []
+   :animate          {:running? false}
    :camera           {:angle-rad (math/deg->rad 0)}
    :translation-rect {:x             (- 150)
                       :y             0
@@ -48,7 +49,10 @@
              :game-loop
              (fn [_ _ _]
                (render-component @state-atom)
-               (draw-scene! @state-atom))))
+               (when-not (get-in @state-atom [:animate :running?])
+                 (draw-scene! @state-atom)
+                 )
+               )))
 
 (def shaders
   {
@@ -83,61 +87,6 @@
            }"
    })
 
-(def matrix-operation-2d
-  {:translation (fn [tx ty]
-                  [1 0 0
-                   0 1 0
-                   tx ty 1])
-   :rotation    (fn [angle-radians]
-                  (let [c (Math/cos angle-radians)
-                        s (Math/sin angle-radians)]
-                    [c (- s) 0
-                     s c 0
-                     0 0 1]))
-   :scaling     (fn [sx sy]
-                  [sx 0 0
-                   0 sy 0
-                   0 0 1])
-   :projection  (fn [width height]
-                  ; flip y-axis so 0 is at top
-                  [(/ 2 width) 0 0
-                   0 (/ (- 2) height) 0
-                   -1 1 1])})
-
-(def matrix-operation-3d
-  {:translation math/translate-3d
-   :rotation-x  (fn [angle-radians]
-                  (let [[c s] (math/cos-sin angle-radians)]
-                    [1 0 0 0
-                     0 c s 0
-                     0 (- s) c 0
-                     0 0 0 1]))
-   :rotation-y  math/rotation-3d-y
-   :rotation-z  (fn [angle-radians]
-                  (let [[c s] (math/cos-sin angle-radians)]
-                    [c s 0 0
-                     (- s) c 0 0
-                     0 0 1 0
-                     0 0 0 1]))
-   :scaling     (fn [sx sy sz]
-                  [sx 0 0 0
-                   0 sy 0 0
-                   0 0 sz 0
-                   0 0 0 1])
-   :projection  (fn [width height depth]
-                  ; flip y-axis so 0 is at top
-                  [(/ 2 width) 0 0 0
-                   0 (/ (- 2) height) 0 0
-                   0 0 (/ 2 depth) 0
-                   -1 1 0 1])
-   :z->w        (fn [fudge-factor]
-                  [1 0 0 0
-                   0 1 0 0
-                   0 0 1 fudge-factor
-                   0 0 0 0 1])
-   :perspective math/perspective-matrix
-   })
-
 (defn compute-matrices
   [{:keys [translation-rect gl]} {:keys [translation rotation-x rotation-y rotation-z scaling projection z->w perspective]}]
   (let [{:keys [x y z scale-x scale-y scale-z fudge-factor z-near z-far field-of-view]} translation-rect
@@ -149,14 +98,12 @@
         z->w-matrix (z->w fudge-factor)
         projection-matrix (projection (aget gl "canvas" "clientWidth") (aget gl "canvas" "clientHeight") 400)
         aspect (webgl/get-aspect gl)
-        perspective-matrix (perspective field-of-view aspect z-near z-far)
-        ]
+        perspective-matrix (perspective field-of-view aspect z-near z-far)]
     (-> (math/matrix-multiply-3d perspective-matrix translation-matrix)
         (math/matrix-multiply-3d rotation-x-matrix)
         (math/matrix-multiply-3d rotation-y-matrix)
         (math/matrix-multiply-3d rotation-z-matrix)
-        (math/matrix-multiply-3d scale-matrix))
-    ))
+        (math/matrix-multiply-3d scale-matrix))))
 
 (defn initialize-gl!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
@@ -168,7 +115,6 @@
 
 (defn draw-scene!
   [{:keys [gl attributes uniforms program] :as state}]
-
   (webgl/resize-canvas-to-display-size gl)
   (webgl/set-gl-viewport! gl)
   (webgl/clear-canvas! gl)
@@ -206,14 +152,22 @@
             x (* (Math/cos angle) 200)
             y (* (Math/sin angle) 200)
 
-            m (math/matrix-multiply-3d vp-matrix (math/translate-3d x 0 y))
-            ]
+            m (math/matrix-multiply-3d vp-matrix (math/translate-3d x 0 y))]
 
         (.uniformMatrix4fv gl matrix-location false m)
 
         ;; actually draw it
-        (.drawArrays gl (.-TRIANGLES gl) offset count))))
-  state)
+        (.drawArrays gl (.-TRIANGLES gl) offset count)))
+
+    ;; uuuuuuuuuuu what a mess
+    (when (get-in state [:animate :running?])
+      (let [state (swap! state-atom (fn [_]
+                                      (assoc-in state [:camera :angle-rad] (math/deg->rad (+ (get-in state [:camera :angle-rad])
+                                                                                             1)))))]
+        (js/requestAnimationFrame (fn [now] (draw-scene! state))))
+      )
+    )
+  )
 
 (defn set-uniform-values
   [{:keys [uniforms]} uniform-name values]
@@ -225,10 +179,17 @@
 (defn handle-event!
   [name data]
   (condp = name
+    :toggle-animation (swap! state-atom (fn [state]
+                                          (let [running? (not (get-in @state-atom [:animate :running?]))
+                                                state (assoc-in state [:animate :running?] running?)]
+                                            (when running?
+                                              (draw-scene! state))
+                                            state
+                                            )))
     :data-change (swap! state-atom (fn [state]
                                      (let [{:keys [path value]} data
                                            state (assoc-in state path value)]
-                                       (->> (compute-matrices state matrix-operation-3d)
+                                       (->> (compute-matrices state math/matrix-operation-3d)
                                             (set-uniform-values state "u_matrix")
                                             (assoc state :uniforms)))))
     :canvas-did-mount (swap! state-atom (fn [{:keys [attributes uniforms canvas-id] :as state}]
@@ -237,8 +198,7 @@
                                                 program (initialize-gl! gl shaders)
                                                 state (assoc state :gl gl)
                                                 position-buffer (webgl/create-buffer gl)
-                                                color-buffer (webgl/create-buffer gl)
-                                                ]
+                                                color-buffer (webgl/create-buffer gl)]
                                             (-> (assoc state :program program)
                                                 (assoc :attributes (conj attributes
                                                                          {:location    (.getAttribLocation gl program "a_position")
@@ -269,7 +229,7 @@
                                                                        {:type      "uniformMatrix4fv"
                                                                         :name      "u_matrix"
                                                                         :transpose false
-                                                                        :values    (compute-matrices state matrix-operation-3d)}))
+                                                                        :values    (compute-matrices state math/matrix-operation-3d)}))
                                                 (webgl/bind-buffer position-buffer (.-ARRAY_BUFFER gl))
                                                 (webgl/set-geometry! (get-in state [(:active-shape state) :shape]))
                                                 (webgl/bind-buffer color-buffer (.-ARRAY_BUFFER gl))

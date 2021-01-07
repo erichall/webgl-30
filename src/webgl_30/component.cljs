@@ -170,4 +170,6 @@
   [:div
    [slider-component {:trigger-event trigger-event
                       :state         state}]
+   [:div {:style    {:border "1px dashed orange"}
+          :on-click (fn [] (trigger-event :toggle-animation))} (if (get-in state [:animate :running?]) "Stop" "Play")]
    [webgl-canvas {:trigger-event trigger-event :state state}]])

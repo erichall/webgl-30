@@ -229,7 +229,7 @@
                                                                        {:type      "uniformMatrix4fv"
                                                                         :name      "u_matrix"
                                                                         :transpose false
-                                                                        :values    (compute-matrices state math/matrix-operation-3d)}))
+                                                                        :values    (compute-matrices state math/matrix-operat3d)}))
                                                 (webgl/bind-buffer position-buffer (.-ARRAY_BUFFER gl))
                                                 (webgl/set-geometry! (get-in state [(:active-shape state) :shape]))
                                                 (webgl/bind-buffer color-buffer (.-ARRAY_BUFFER gl))

@@ -542,7 +542,6 @@ doing some cool camera rotation.
 The rotation is done by fixating a line between the camera, and the object we want to look at, this is done by subtracting the 
 camera angle with the target angle, this is what we calle the 'z-axis', we need find the x and y-axis by using the cross product between them.
 
-
 ##### What did we do today?
 Animation. It's funny when you design something, and it turns out awful. Well, now I know that my draw-scene function together with the
 rest of the stuff that we have is not really equipped to deal with RAF.
@@ -554,16 +553,19 @@ Textures.
 We need to figure out a good refactoring out of this. Though, animation has nothing to do with WebGL.
 
 ---
+### 12/30
 
+##### What the heck did we do yesterday?
+Realised that we have a huge mess now and are in dire need of some refactoring.
 
+##### What did we do today?
+Doing refactoring but it's late now!
 
+##### Moving forward?
+Refactoring!
 
+##### Conclusion
+Refactoring!
 
-
-
-
-
-
-
-
+---
 

@@ -569,3 +569,50 @@ Refactoring!
 
 ---
 
+### 13/30
+
+##### What the heck did we do yesterday?
+Some major refactorings.
+
+##### What did we do today?
+Up to date with the refactorings. We now have each lesson split into modules that we can toggle between. I think this will 
+be a lot easier to handle rather than to keep building on a single example.
+
+##### Moving forward?
+While doing the refactoring we had a chance to revisit some of the earliest lessons, and yet again we have drawn a triangle and a
+box!
+
+##### Conclusion
+Now would be a good time to revisit some more lessons, so we can see how this new design is working for us.
+The setup and draw function is quite nice I think:
+```clojure
+(defn draw!
+  [timestamp]
+  (webgl/draw-scene! @state-atom))
+
+(defn setup!
+  []
+  (-> (swap! state-atom (fn [{:keys [gl] :as state}]
+                          (let [
+                                program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                position-buffer {:buffer (webgl/create-buffer gl)
+                                                 :target (.-ARRAY-BUFFER gl)}]
+                            (-> (assoc state :program program)
+                                (assoc :attributes [{:name      "a_position"
+                                                     :size      2
+                                                     :type      (.-FLOAT gl)
+                                                     :normalize false
+                                                     :stride    0
+                                                     :offset    0
+                                                     :buffer    position-buffer}])
+                                (assoc :elements [{:src-data  (js/Float32Array. [0 0
+                                                                                 0 0.5
+                                                                                 0.7 0])
+                                                   :target    (.-ARRAY_BUFFER gl)
+                                                   :usage     (.-STATIC_DRAW gl)
+                                                   :draw-type (.-TRIANGLES gl)
+                                                   :buffer    position-buffer
+                                                   :offset    0
+                                                   :count     3}])))))
+      webgl/set-elements!))
+```

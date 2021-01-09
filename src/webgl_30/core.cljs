@@ -105,7 +105,8 @@
         (math/matrix-multiply-3d rotation-z-matrix)
         (math/matrix-multiply-3d scale-matrix))))
 
-(defn initialize-gl!
+
+(defn link-shaders!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
   [gl {:keys [vs fs]}]
   (let [vs (webgl/create-shader gl (.-VERTEX_SHADER gl) vs)

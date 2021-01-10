@@ -616,3 +616,43 @@ The setup and draw function is quite nice I think:
                                                    :count     3}])))))
       webgl/set-elements!))
 ```
+
+### 14/30
+
+##### What the heck did we do yesterday?
+Repetition and refactoring. I said yesterday that the refactoring was up to speed now. While, it kinda is... We immediately hit a 
+bump when trying to draw multiple stuff. So..... we had to do some more refactoring.
+
+##### What did we do today?
+If you are familiar with the [Dreyfus model of skill acquisition](https://en.wikipedia.org/wiki/Dreyfus_model_of_skill_acquisition)
+you know that there are five levels going from novice to expert. If we relate that model to our work here, it is absolute clear that
+a complete WebGL novice, going at it for 14 days now! is trying to setup some general abstracted API to work with WebGL. 
+
+Even though, this is exactly what we have refactoring sessions for! But the most important thing that I've noticed myself struggle with
+is naming parameters. And not in the sense like, `should I call this x or the-element-i-want-in-the-list` I'm talking about
+naming stuff that is passed to some dark magic WebGL function that I'm not even aware of what it does. 
+
+One example of this is the `bind-buffer` fn
+```clojure
+(defn bind-buffer
+  [^js gl buffer target]
+  (.bindBuffer gl target buffer)
+  gl)
+```
+
+I initially called `target` `type`, which is wrong because after reading up on what this function does, it binds a buffer to a target
+and not a type. 
+
+Not sure though what my point is with this, just reflecting and learning I guess. 
+
+At least we can draw multiple stuff now, even though the previous lessons are not up to date with the new refactoring. 
+
+I also want to believe that this architecture is something we can move forward with, at least for a couple of lessons! 
+
+##### Moving forward?
+Finish the refactoring and keep doing repetition.
+
+##### Conclusion
+The journey from novice to master is exiting. 
+
+```

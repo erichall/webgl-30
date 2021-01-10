@@ -28,7 +28,7 @@
        // convert from 0->2 to -1->+1 (clip space)
        vec2 clipSpace = zeroToTwo - 1.0;
 
-       gl_Position = vec4(clipSpace, 0, 1);
+       gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1); // * vec(1, -1) flips y so it's top-left corner.
   }")
 
 (defn draw!
@@ -70,18 +70,21 @@
 
 
 (def ^:export lesson
-  {:title (fn []
-            [:div
-             [:h1 {:style {:font-family "monospace"}}
-              "Lesson - WebGL Fundamentals"]
-             [:h4 "A box!"]])
-   :start (fn []
-            (let [canvas-id "fundamentals"]
-              [webgl-canvas {:height   400
-                             :width    400
-                             :id       canvas-id
-                             :on-mount (fn []
-                                         (do
-                                           (swap! state-atom assoc :gl (webgl/get-context canvas-id))
-                                           (setup!)
-                                           (js/requestAnimationFrame draw!)))}]))})
+  {:title           (fn []
+                      [:div
+                       [:h1 {:style {:font-family "monospace"}}
+                        "Lesson - WebGL Fundamentals"]
+                       [:h4 {:style {:font-family "monospace"}}
+                        "A box with translated coordinates"]])
+   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/fundamentals_1.cljs"
+   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-fundamentals.html"
+   :start           (fn []
+                      (let [canvas-id "fundamentals"]
+                        [webgl-canvas {:height   400
+                                       :width    400
+                                       :id       canvas-id
+                                       :on-mount (fn []
+                                                   (do
+                                                     (swap! state-atom assoc :gl (webgl/get-context canvas-id))
+                                                     (setup!)
+                                                     (js/requestAnimationFrame draw!)))}]))})

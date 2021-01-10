@@ -56,42 +56,48 @@
   ;(.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
   (.clear gl (.-COLOR_BUFFER_BIT gl)))
 
-(defn create-buffer
-  [gl]
-  (.createBuffer gl))
-
 (defn bind-buffer
-  [^js gl {:keys [buffer target]}]
+  [^js gl buffer target]
   (.bindBuffer gl target buffer)
   gl)
 
 (defn buffer-data
   "bufferData copies the `src-data` to the GPU."
-  [^js gl {:keys [target src-data usage buffer]}]
-  {:pre  [(some? gl) (some? (:buffer buffer)) (some? (:target buffer))]
+  [^js gl {:keys [target src-data usage]}]
+  {:pre  [(some? gl)]
    :post [(= gl %)]}
-  (-> (bind-buffer gl buffer)
-      (.bufferData target src-data usage))
+  (.bufferData gl target src-data usage)
   gl)
 
-(defn set-attribute
-  [gl program {:keys [name size type normalize stride offset buffer]}]
-  (let [location (.getAttribLocation gl program name)]
-    ;; Turn the variable on inside our GLSL VS program above.
-    (.enableVertexAttribArray gl location)
+(defn create-buffer
+  [gl {:keys [target data usage]}]
+  (let [buffer (.createBuffer gl)]
+    (-> (bind-buffer gl buffer target)
+        (buffer-data {:target   target
+                      :src-data data
+                      :usage    usage}))
+    {:buffer buffer
+     :target target
+     :data   data
+     :usage  usage}))
 
-    (bind-buffer gl buffer)
-    ;; Describe how to take the data from our buffer and give it to our shader.
-    (.vertexAttribPointer gl location size type normalize stride offset)))
+
+(defn set-attribute
+  [gl {:keys [location size type normalize stride offset buffer-info]}]
+  ;; Turn the variable on inside our GLSL VS program above.
+  (.enableVertexAttribArray gl location)
+
+  (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
+  ;; Describe how to take the data from our buffer and give it to our shader.
+  (.vertexAttribPointer gl location size type normalize stride offset))
 
 (defn get-uniform-location
   [gl program name]
   (.getUniformLocation gl program name))
 
 (defn set-uniform
-  [^js gl program {:keys [type name values transpose]}]
-  (let [location (get-uniform-location gl program name)
-        values (if (some? transpose) (cons transpose [values]) values)]
+  [^js gl {:keys [type location values transpose]}]
+  (let [values (if (some? transpose) (cons transpose [values]) values)]
     (if (clojure.string/ends-with? type "v")
       (if (vector? values)
         (js-invoke gl type location values)
@@ -113,11 +119,12 @@
                                                          -175 100
                                                          ]) (.-STATIC_DRAW gl)))
 
-(defn set-elements!
-  [{:keys [gl elements]}]
-  (doseq [element elements]
-    (buffer-data gl element))
-  gl)
+;(defn set-elements!
+;  [{:keys [gl elements]}]
+;  (doseq [element elements]
+;    (-> (bind-buffer gl (:buffer element))
+;        (buffer-data element)))
+;  gl)
 
 (defn set-rectangle!
   "Create a rectangle by using two triangles"
@@ -146,24 +153,26 @@
 ;; :GL_INVALID_OPERATION : glDrawArrays: attempt to access out of range vertices in attribute 0
 ;; wrong size on the attribute.... 3 instead of 2....
 
+(defn draw-arrays
+  [gl {:keys [draw-type offset count]}]
+  (.drawArrays gl draw-type offset count))
+
 (defn draw-scene!
-  [{:keys [gl attributes uniforms elements program] :as state}]
+  [{:keys [gl objects-to-draw] :as state}]
   (resize-canvas-to-display-size gl)
   (set-gl-viewport! gl)
   (clear-canvas! gl)
 
-  ;; the program contains our two shaders, vertex and fragment shader. tell WebGL that we want to run them!
-  (.useProgram gl program)
+  (doseq [{:keys [program attributes uniforms element]} objects-to-draw]
+    (.useProgram gl program)
 
-  (doseq [uniform uniforms]
-    (set-uniform gl program uniform))
+    (doseq [uniform uniforms]
+      (set-uniform gl uniform))
 
-  (doseq [attribute attributes]
-    (set-attribute gl program attribute))
+    (doseq [attribute attributes]
+      (set-attribute gl attribute))
 
-  (doseq [{:keys [offset count buffer draw-type]} elements]
-    (bind-buffer gl buffer)
-    (.drawArrays gl draw-type offset count)))
+    (draw-arrays gl element)))
 
 (defn link-shaders!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
@@ -172,6 +181,11 @@
         fs (create-shader gl (.-FRAGMENT_SHADER gl) fs)
         program (create-program gl vs fs)]
     program))
+
+(defn get-attribute
+  [{:keys [attributes]} attribute-name]
+  (-> (filter (fn [{:keys [name]}] (= name attribute-name)) attributes)
+      first))
 
 
 

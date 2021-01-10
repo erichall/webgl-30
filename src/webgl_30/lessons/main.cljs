@@ -2,11 +2,15 @@
   (:require [reagent.dom :as rd]
             [reagent.core :as r]
             [webgl-30.lessons.fundamentals-0 :as fundamentals-0]
-            [webgl-30.lessons.fundamentals-1 :as fundamentals-1]))
+            [webgl-30.lessons.fundamentals-1 :as fundamentals-1]
+            [webgl-30.lessons.fundamentals-2 :as fundamentals-2]
+            ))
 
-(def initial-state {:active-page-index 0
+(def initial-state {:active-page-index 2
                     :lessons           [fundamentals-0/lesson
-                                        fundamentals-1/lesson]
+                                        fundamentals-1/lesson
+                                        fundamentals-2/lesson
+                                        ]
                     })
 
 (declare render-component)
@@ -49,8 +53,7 @@
 
 (defn app
   [{:keys [state]}]
-  (let [{:keys [title start]} (get-in state [:lessons (:active-page-index state)])]
-    (println title)
+  (let [{:keys [title start source tutorial-source]} (get-in state [:lessons (:active-page-index state)])]
     [:div
      [:div {:style {:display         "flex"
                     :flex-direction  "row"
@@ -68,7 +71,24 @@
                                                      (if (= (dec (count lessons)) active-page-index)
                                                        state
                                                        (assoc state :active-page-index (inc active-page-index))))))}]]
-     [start]]))
+     [:div {:style {:display "block"}}
+      [start]]
+     [:div
+      [:span {:style {:color   "white"
+                      :display "block"
+                      :margin-bottom "10px"
+                      :margin-top "10px"}}
+       "Clojure implementation of "
+       [:a {:href   tutorial-source
+            :target "_blank"
+            :style  {:color       "rgba(0, 181, 255, 1)"
+                     :font-family "monospace"}} tutorial-source]]
+      [:span "Github: " [:a {:href   source
+                            :target "_blank"
+                            :style  {:color       "rgba(0, 181, 255, 1)"
+                                     :font-family "monospace"}} "[source]"]]
+
+      ]]))
 
 (defn render-component
   [state]

@@ -9,11 +9,10 @@
                        :asset-path "."
                        :target     :browser
                        :modules    {:main {
-                                           ;:init-fn webgl-30.core/init!
                                            :init-fn webgl-30.lessons.main/init!
                                            }}
                        :devtools   {
-                                    :after-load webgl-30.core/reload!
+                                    :after-load webgl-30.lessons.main/reload!
                                     }
                        }
 

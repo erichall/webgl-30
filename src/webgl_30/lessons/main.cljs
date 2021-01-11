@@ -4,12 +4,14 @@
             [webgl-30.lessons.fundamentals-0 :as fundamentals-0]
             [webgl-30.lessons.fundamentals-1 :as fundamentals-1]
             [webgl-30.lessons.fundamentals-2 :as fundamentals-2]
+            [webgl-30.lessons.translation-2d :as translation-2d]
             ))
 
-(def initial-state {:active-page-index 2
+(def initial-state {:active-page-index 3
                     :lessons           [fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
+                                        translation-2d/lesson
                                         ]
                     })
 
@@ -74,19 +76,19 @@
      [:div {:style {:display "block"}}
       [start]]
      [:div
-      [:span {:style {:color   "white"
-                      :display "block"
+      [:span {:style {:color         "white"
+                      :display       "block"
                       :margin-bottom "10px"
-                      :margin-top "10px"}}
+                      :margin-top    "10px"}}
        "Clojure implementation of "
        [:a {:href   tutorial-source
             :target "_blank"
             :style  {:color       "rgba(0, 181, 255, 1)"
                      :font-family "monospace"}} tutorial-source]]
       [:span "Github: " [:a {:href   source
-                            :target "_blank"
-                            :style  {:color       "rgba(0, 181, 255, 1)"
-                                     :font-family "monospace"}} "[source]"]]
+                             :target "_blank"
+                             :style  {:color       "rgba(0, 181, 255, 1)"
+                                      :font-family "monospace"}} "[source]"]]
 
       ]]))
 

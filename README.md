@@ -655,4 +655,37 @@ Finish the refactoring and keep doing repetition.
 ##### Conclusion
 The journey from novice to master is exiting. 
 
+---
+### 15/30
+
+##### What the heck did we do yesterday?
+We manage to create a architecture that are able to draw lots of elements in a quite dynamic way. 
+
+##### What did we do today?
+Moved on towards 2d translation again but this time with the new design in use. It works quite good I assume. 
+The first bit of this tutorial is quite naive by calling `bufferData` in each render but we manage to get it up and running
+with a movable rect:
+```clojure
+(defn draw!
+  [timestamp]
+  (let [{:keys [gl objects-to-draw rect] :as state} @state-atom]
+
+    (webgl/draw-scene! state)
+
+    (doseq [{:keys [buffer-info]} objects-to-draw]
+      (webgl/buffer-data gl {:target   (:target buffer-info)
+                             :src-data (-> (webgl/get-rectangle {:x      (:x rect)
+                                                                 :y      (:y rect)
+                                                                 :width  (:width rect)
+                                                                 :height (:height rect)})
+                                           js/Float32Array.)
+                             :usage    (:usage buffer-info)}))))
+```
+
+##### Moving forward?
+We continue to test if our design is good enough!
+
+##### Conclusion
+Clojure is fun but mixing WebGL `gl` context state with an atom is... I don't know, they don't mix well, I guess.
+
 ```

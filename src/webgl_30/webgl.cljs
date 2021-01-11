@@ -187,6 +187,19 @@
   (-> (filter (fn [{:keys [name]}] (= name attribute-name)) attributes)
       first))
 
+(defn get-rectangle
+  [{:keys [x y width height]}]
+  (let [x1 x
+        x2 (+ x width)
+        y1 y
+        y2 (+ y height)]
+    [x1 y1
+     x2 y1
+     x1 y2
+     x1 y2
+     x2 y1
+     x2 y2]))
+
 
 
 

@@ -1,7 +1,7 @@
-(ns webgl-30.lessons.translation-2d
+(ns webgl-30.lessons.translation-2d-1
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
-            [webgl-30.math :as math]
+            [webgl-30.shapes :as shapes]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
@@ -25,10 +25,13 @@
   "attribute vec2 a_position;
 
   uniform vec2 u_resolution;
+  uniform vec2 u_translation;
 
   void main() {
+       vec2 position = a_position + u_translation;
+
        // convert the position from pixels to 0.0 to 1.0
-       vec2 zeroToOne = a_position / u_resolution;
+       vec2 zeroToOne = position / u_resolution;
 
        // convert from 0->1 to 0->2
        vec2 zeroToTwo = zeroToOne * 2.0;
@@ -43,49 +46,38 @@
 
 (defn draw!
   [timestamp]
-  (let [{:keys [gl objects-to-draw rect] :as state} @state-atom]
-
-    (webgl/draw-scene! state)
-
-    (doseq [{:keys [buffer-info]} objects-to-draw]
-      (webgl/buffer-data gl {:target   (:target buffer-info)
-                             :src-data (-> (webgl/get-rectangle {:x      (:x rect)
-                                                                 :y      (:y rect)
-                                                                 :width  (:width rect)
-                                                                 :height (:height rect)})
-                                           js/Float32Array.)
-                             :usage    (:usage buffer-info)}))))
+  (let [{:keys [rect] :as state} @state-atom]
+    (->> [(:x rect) (:y rect)]
+         (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values])
+         webgl/draw-scene!)))
 
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                buffer-info (webgl/create-buffer gl
-                                                                 {:data   (js/Float32Array. (webgl/get-rectangle {:x      (:x rect)
-                                                                                                                  :y      (:y rect)
-                                                                                                                  :width  (:width rect)
-                                                                                                                  :height (:height rect)}))
-                                                                  :usage  (.-STATIC_DRAW gl)
-                                                                  :target (.-ARRAY-BUFFER gl)})]
-                            (assoc state :objects-to-draw
-                                         [{:program     program
-                                           :buffer-info buffer-info
-                                           :attributes  [{:location    (.getAttribLocation gl program "a_position")
-                                                          :size        2
-                                                          :type        (.-FLOAT gl)
-                                                          :normalize   false
-                                                          :stride      0
-                                                          :offset      0
-                                                          :buffer-info buffer-info}]
-                                           :uniforms    [{:location (webgl/get-uniform-location gl program "u_resolution")
-                                                          :type     "uniform2f"
-                                                          :values   [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                         {:location (webgl/get-uniform-location gl program "u_color")
-                                                          :type     "uniform4f"
-                                                          :values   (:color rect)}]
-                                           :element     {:draw-type (.-TRIANGLES gl)
-                                                         :offset    0
-                                                         :count     6}}]))))))
+                          (assoc state :objects-to-draw
+                                       {:my-rect {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                                  :attributes {:a_position {:name        "a_position"
+                                                                            :size        2
+                                                                            :type        (.-FLOAT gl)
+                                                                            :normalize   false
+                                                                            :stride      0
+                                                                            :offset      0
+                                                                            :buffer-info (webgl/create-buffer gl
+                                                                                                              {:data   (js/Float32Array. shapes/f-shape-2d)
+                                                                                                               :usage  (.-STATIC_DRAW gl)
+                                                                                                               :target (.-ARRAY-BUFFER gl)})}}
+                                                  :uniforms   {:u_resolution  {:name   "u_resolution"
+                                                                               :type   "uniform2f"
+                                                                               :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                               :u_color       {:name   "u_color"
+                                                                               :type   "uniform4fv"
+                                                                               :values (:color rect)}
+                                                               :u_translation {:name   "u_translation"
+                                                                               :type   "uniform2fv"
+                                                                               :values [(:x rect) (:y rect)]}}
+                                                  :element    {:draw-type (.-TRIANGLES gl)
+                                                               :offset    0
+                                                               :count     18}}})))))
 
 (def ^:export lesson
   {:title           (fn []
@@ -93,7 +85,7 @@
                        [:h1 {:style {:font-family "monospace"}}
                         "Lesson - WebGL Fundamentals"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Lots of random boxes"]])
+                        "Translating a rect"]])
    :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/translation_2d.cljs"
    :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-translation.html"
    :start           (fn []

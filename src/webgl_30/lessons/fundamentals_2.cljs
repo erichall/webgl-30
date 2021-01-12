@@ -51,35 +51,34 @@
                           ;;  for each thing to draw, setup uniforms
                           ;;        call gl.uniformXXX for each thing
                           ;;  then call drawArrays for each thing, or with an arg to all of them
-                          (assoc state :objects-to-draw (mapv (fn [_]
-                                                                (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                                                      buffer-info (webgl/create-buffer gl
-                                                                                                       {:data   (js/Float32Array. (webgl/get-rectangle {:x      (math/random-int 300)
-                                                                                                                                                        :y      (math/random-int 300)
-                                                                                                                                                        :width  (math/random-int 300)
-                                                                                                                                                        :height (math/random-int 300)}))
-                                                                                                        :usage  (.-STATIC_DRAW gl)
-                                                                                                        :target (.-ARRAY-BUFFER gl)})]
-                                                                  {:program    program
-                                                                   :attributes [{:location    (.getAttribLocation gl program "a_position")
-                                                                                 :size        2
-                                                                                 :type        (.-FLOAT gl)
-                                                                                 :normalize   false
-                                                                                 :stride      0
-                                                                                 :offset      0
-                                                                                 :buffer-info buffer-info}]
-                                                                   :uniforms   [{:location (webgl/get-uniform-location gl program "u_resolution")
-                                                                                 :type     "uniform2f"
-                                                                                 :values   [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                                                {:location (webgl/get-uniform-location gl program "u_color")
-                                                                                 :type     "uniform4f"
-                                                                                 :values   [(js/Math.random)
-                                                                                            (js/Math.random)
-                                                                                            (js/Math.random)
-                                                                                            1]}]
-                                                                   :element    {:draw-type (.-TRIANGLES gl)
-                                                                                :offset    0
-                                                                                :count     6}})) (range 10)))))))
+                          (assoc state :objects-to-draw (reduce (fn [acc i]
+                                                                  (assoc acc (keyword (str i))
+                                                                             {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                                                              :attributes {:a_position {:name        "a_position"
+                                                                                                        :size        2
+                                                                                                        :type        (.-FLOAT gl)
+                                                                                                        :normalize   false
+                                                                                                        :stride      0
+                                                                                                        :offset      0
+                                                                                                        :buffer-info (webgl/create-buffer gl
+                                                                                                                                          {:data   (js/Float32Array. (webgl/get-rectangle {:x      (math/random-int 300)
+                                                                                                                                                                                           :y      (math/random-int 300)
+                                                                                                                                                                                           :width  (math/random-int 300)
+                                                                                                                                                                                           :height (math/random-int 300)}))
+                                                                                                                                           :usage  (.-STATIC_DRAW gl)
+                                                                                                                                           :target (.-ARRAY-BUFFER gl)})}}
+                                                                              :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                                                          :type   "uniform2f"
+                                                                                                          :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                                                           :u_color      {:name   "u_color"
+                                                                                                          :type   "uniform4f"
+                                                                                                          :values [(js/Math.random)
+                                                                                                                   (js/Math.random)
+                                                                                                                   (js/Math.random)
+                                                                                                                   1]}}
+                                                                              :element    {:draw-type (.-TRIANGLES gl)
+                                                                                           :offset    0
+                                                                                           :count     6}})) {} (range 10)))))))
 
 (def ^:export lesson
   {:title           (fn []

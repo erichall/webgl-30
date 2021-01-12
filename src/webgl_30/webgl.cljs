@@ -83,21 +83,23 @@
 
 
 (defn set-attribute
-  [gl {:keys [location size type normalize stride offset buffer-info]}]
-  ;; Turn the variable on inside our GLSL VS program above.
-  (.enableVertexAttribArray gl location)
+  [gl program {:keys [name size type normalize stride offset buffer-info]}]
+  (let [location (.getAttribLocation gl program name)]
+    ;; Turn the variable on inside our GLSL VS program above.
+    (.enableVertexAttribArray gl location)
 
-  (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
-  ;; Describe how to take the data from our buffer and give it to our shader.
-  (.vertexAttribPointer gl location size type normalize stride offset))
+    (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
+    ;; Describe how to take the data from our buffer and give it to our shader.
+    (.vertexAttribPointer gl location size type normalize stride offset)))
 
 (defn get-uniform-location
   [gl program name]
   (.getUniformLocation gl program name))
 
 (defn set-uniform
-  [^js gl {:keys [type location values transpose]}]
-  (let [values (if (some? transpose) (cons transpose [values]) values)]
+  [^js gl program {:keys [type location values transpose name]}]
+  (let [location (get-uniform-location gl program name)
+        values (if (some? transpose) (cons transpose [values]) values)]
     (if (clojure.string/ends-with? type "v")
       (if (vector? values)
         (js-invoke gl type location values)
@@ -163,14 +165,14 @@
   (set-gl-viewport! gl)
   (clear-canvas! gl)
 
-  (doseq [{:keys [program attributes uniforms element]} objects-to-draw]
+  (doseq [{:keys [program attributes uniforms element]} (vals objects-to-draw)]
     (.useProgram gl program)
 
-    (doseq [uniform uniforms]
-      (set-uniform gl uniform))
+    (doseq [uniform (vals uniforms)]
+      (set-uniform gl program uniform))
 
-    (doseq [attribute attributes]
-      (set-attribute gl attribute))
+    (doseq [attribute (vals attributes)]
+      (set-attribute gl program attribute))
 
     (draw-arrays gl element)))
 

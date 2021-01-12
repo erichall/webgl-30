@@ -27,23 +27,22 @@
 (defn setup!
   []
   (swap! state-atom (fn [{:keys [gl] :as state}]
-                      (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
-                        (assoc state :objects-to-draw [{:program    program
-                                                        :attributes [{:location    (.getAttribLocation gl program "a_position")
-                                                                      :size        2
-                                                                      :type        (.-FLOAT gl)
-                                                                      :normalize   false
-                                                                      :stride      0
-                                                                      :offset      0
-                                                                      :buffer-info (webgl/create-buffer gl
-                                                                                                        {:data   (js/Float32Array. [0 0
-                                                                                                                                    0 0.5
-                                                                                                                                    0.7 0])
-                                                                                                         :usage  (.-STATIC_DRAW gl)
-                                                                                                         :target (.-ARRAY-BUFFER gl)})}]
-                                                        :element    {:draw-type (.-TRIANGLES gl)
-                                                                     :offset    0
-                                                                     :count     3}}])))))
+                      (assoc state :objects-to-draw {:too {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                                           :attributes {:a_position {:name        "a_position"
+                                                                                     :size        2
+                                                                                     :type        (.-FLOAT gl)
+                                                                                     :normalize   false
+                                                                                     :stride      0
+                                                                                     :offset      0
+                                                                                     :buffer-info (webgl/create-buffer gl
+                                                                                                                       {:data   (js/Float32Array. [0 0
+                                                                                                                                                   0 0.5
+                                                                                                                                                   0.7 0])
+                                                                                                                        :usage  (.-STATIC_DRAW gl)
+                                                                                                                        :target (.-ARRAY-BUFFER gl)})}}
+                                                           :element    {:draw-type (.-TRIANGLES gl)
+                                                                        :offset    0
+                                                                        :count     3}}}))))
 
 (def ^:export lesson
   {:title           (fn []

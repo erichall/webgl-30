@@ -4,16 +4,19 @@
             [webgl-30.lessons.fundamentals-0 :as fundamentals-0]
             [webgl-30.lessons.fundamentals-1 :as fundamentals-1]
             [webgl-30.lessons.fundamentals-2 :as fundamentals-2]
-            [webgl-30.lessons.translation-2d :as translation-2d]
+            [webgl-30.lessons.translation-2d-0 :as translation-2d-0]
+            [webgl-30.lessons.translation-2d-1 :as translation-2d-1]
+            [webgl-30.lessons.rotation-2d-0 :as rotation-2d-0]
             ))
 
-(def initial-state {:active-page-index 3
+(def initial-state {:active-page-index 5
                     :lessons           [fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
-                                        translation-2d/lesson
-                                        ]
-                    })
+                                        translation-2d-0/lesson
+                                        translation-2d-1/lesson
+                                        rotation-2d-0/lesson
+                                        ]})
 
 (declare render-component)
 (defonce state-atom (atom nil))

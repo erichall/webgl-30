@@ -5,11 +5,12 @@
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
-                    :rect {:x      0
-                           :y      0
-                           :width  100
-                           :height 30
-                           :color  [0.3 0.3 0.3 1]}})
+                    :rect {:x        0
+                           :y        0
+                           :rotation [0 1]
+                           :width    100
+                           :height   30
+                           :color    [0.3 0.3 0.3 1]}})
 (defonce state-atom (r/atom nil))
 (when (nil? @state-atom)
   (reset! state-atom initial-state))
@@ -26,9 +27,14 @@
 
   uniform vec2 u_resolution;
   uniform vec2 u_translation;
+  uniform vec2 u_rotation;
 
   void main() {
-       vec2 position = a_position + u_translation;
+        vec2 rotatedPosition = vec2(
+          a_position.x * u_rotation.y + a_position.y * u_rotation.x,
+          a_position.y * u_rotation.y - a_position.x * u_rotation.x);
+
+       vec2 position = rotatedPosition + u_translation;
 
        // convert the position from pixels to 0.0 to 1.0
        vec2 zeroToOne = position / u_resolution;
@@ -42,84 +48,106 @@
        gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1); // * vec(1, -1) flips y so it's top-left corner.
   }")
 
-(defn map-range
-  [output-end output-start input-start input-end v]
-  (+ (* (/ (+ v input-start) (- input-end input-start))
-        (- output-end output-start))
-     output-start))
+(defn map-coordinate
+  [s src-min src-max res-min res-max]
+  (+
+    (*
+      (/ (- s src-min)
+         (- src-max src-min))
+      (- res-max res-min))
+    res-min))
+
+(defn format
+  [f & xs]
+  (apply cljs.pprint/cl-format nil f xs))
 
 (defn unit-circle
-  []
-  (let [local-state-atom (r/atom {:x-pos      10
-                                  :y-pos      50
-                                  :mouse-down false})]
-    (fn []
-      (let [{:keys [x-pos y-pos]} @local-state-atom]
-        [:svg {:viewBox       "0 0 100 100"
+  [{:keys [height width radius] :or {height 100 width 100 radius 40}}]
+  (let [local-state-atom (r/atom {:x-pos       (- (/ width 2) radius)
+                                  :y-pos       (/ height 2)
+                                  :width       width
+                                  :half-width  (/ width 2)
+                                  :height      height
+                                  :half-height (/ height 2)
+                                  :min-x       (- (/ width 2) radius)
+                                  :max-x       (+ (/ width 2) radius)
+                                  :min-y       (- (/ height 2) radius)
+                                  :max-y       (+ (/ height 2) radius)
+                                  :radius      radius
+                                  :mouse-down  false})]
+    (fn [{:keys [height width radius on-change] :or {height 100 width 100 radius 40}}]
+      (let [{:keys [x-pos y-pos mouse-down min-x max-x min-y max-y half-width half-height]} @local-state-atom
+            txt-style {:font-size "5px" :opacity 0.7 :user-select "none"}]
+        [:svg {:viewBox       (str "0 0 " width " " height)
+               :height        height
+               :width         width
                :id            "unit-circle"
                :style         {:border "1px dashed orange"}
+               :on-mouse-up   (fn [evt] (swap! local-state-atom assoc :mouse-down false))
                :on-mouse-move (fn [evt]
-                                (when (:mouse-down @local-state-atom)
+                                (when mouse-down
                                   (let [svg (js/document.querySelector "#unit-circle")
-                                        bb (.getBoundingClientRect svg)
-                                        left (aget bb "left")
-                                        top (aget bb "top")
-                                        client-x (aget evt "clientX")
-                                        client-y (aget evt "clientY")
-                                        x (- client-x left)
-                                        y (- client-y top)]
-                                    ;; x [10 90]
-                                    ;; y [10 90]
+                                        pt (-> svg .createSVGPoint)
+                                        _ (aset pt "x" (aget evt "clientX"))
+                                        _ (aset pt "y" (aget evt "clientY"))
+                                        svg-p (.matrixTransform pt (.inverse (.getScreenCTM svg)))
+
+                                        x (aget svg-p "x")
+                                        y (aget svg-p "y")
+                                        unit-x (map-coordinate x min-x max-x -1 1)
+                                        unit-y (map-coordinate y min-y max-y -1 1)
+                                        angle-rad (Math/atan2 unit-y unit-x)
+                                        cos-x (Math/cos angle-rad)
+                                        sin-y (Math/sin angle-rad)
+                                        svg-x (map-coordinate cos-x -1 1 min-x max-x)
+                                        svg-y (map-coordinate sin-y -1 1 min-y max-y)]
                                     (swap! local-state-atom (fn [state]
-                                                              (-> (assoc state :x-pos
-                                                                               (+ 50 (map-range 90 10 (/ Math/PI -2) (/ Math/PI 2) (Math/cos x)))
-                                                                               )
-                                                                  (assoc :y-pos
-                                                                         (+ 50 (map-range 90 10 (/ Math/PI -2) (/ Math/PI 2) (Math/sin y)))
-                                                                         ))))
-                                    )
-                                  )
-                                )
+                                                              (-> (assoc state :x-pos svg-x)
+                                                                  (assoc :y-pos svg-y))))
+                                    (on-change {:x cos-x :y sin-y :angle-rad angle-rad}))))
                :xmlns         "http://www.w3.org/2000/svg"}
          ;; vertical
-         [:path {:d "M10 0 L10 100" :stroke "gray"}]
-         [:path {:d "M50 0 L50 100" :stroke "gray"}]
-         [:path {:d "M90 0 L90 100" :stroke "gray"}]
+         [:path {:d (str "M" min-x " 0 L" min-x " " width) :stroke "gray"}]
+         [:path {:d (format "M~d 0 L~d ~d" half-width half-width width) :stroke "gray"}]
+         [:path {:d (format "M~d 0 L~d ~d" half-width half-width width) :stroke "gray"}]
+         [:path {:d (format "M~d 0 L~d ~d" max-x max-x height) :stroke "gray"}]
          ;; horizontal
-         [:path {:d "M0 10 L100 10" :stroke "gray"}]
-         [:path {:d "M0 50 L100 50" :stroke "gray"}]
-         [:path {:d "M0 90 L100 90" :stroke "gray"}]
+         [:path {:d (format "M0 ~d L~d ~d" min-y width min-y) :stroke "gray"}]
+         [:path {:d (format "M0 ~d L~d ~d" half-height width half-height) :stroke "gray"}]
+         [:path {:d (format "M0 ~d L~d ~d" max-y width max-y) :stroke "gray"}]
 
-         [:text {:x 52 :y 55 :fill "white" :style {:font-size "5px"}} "0"]
-         [:text {:x 12 :y 55 :fill "white" :style {:font-size "5px"}} "-1"]
-         [:text {:x 92 :y 55 :fill "white" :style {:font-size "5px"}} "1"]
+         [:text {:x (+ half-width 2) :y (+ half-height 5) :fill "white" :style txt-style} "0"]
+         [:text {:x (+ min-x 2) :y (+ half-height 5) :fill "white" :style txt-style} "-1"]
+         [:text {:x (- max-y 5) :y (+ half-height 5) :fill "white" :style txt-style} "1"]
 
-         [:text {:x 52 :y 15 :fill "white" :style {:font-size "5px"}} "1"]
-         [:text {:x 52 :y 88 :fill "white" :style {:font-size "5px"}} "-1"]
+         [:text {:x (+ half-width 2) :y (+ min-y 5) :fill "white" :style txt-style} "1"]
+         [:text {:x (+ half-width 2) :y (- max-y 2) :fill "white" :style txt-style} "-1"]
+
+         [:polygon {:points (str half-width "," half-height " " (int x-pos) "," (int y-pos) " " (int x-pos) "," half-height)
+                    :fill   "rgba(34, 167, 240, 0.6)"}]
+
+         [:text {:x x-pos :y (+ half-height 5) :fill "white" :style {:font-size "4px" :user-select "none"}} (str "x=" (cljs.pprint/cl-format nil "~,2f" (map-coordinate x-pos 10 90 -1 1)))]
+         [:text {:x x-pos :y y-pos :fill "white" :style {:font-size "4px" :user-select "none"}} (str "y=" (cljs.pprint/cl-format nil "~,2f" (map-coordinate y-pos 10 90 -1 1)))]
 
          [:circle {:cx            x-pos :cy y-pos :r "7px" :stroke "white" :fill "rgba(170,188,255, 0.7)" :stroke-width 1
-                   :on-mouse-down (fn [evt] (swap! local-state-atom assoc :mouse-down true))
-                   :on-mouse-up   (fn [evt] (swap! local-state-atom assoc :mouse-down false))
-
-                   }]
+                   :on-mouse-down (fn [] (swap! local-state-atom assoc :mouse-down true))
+                   :style         {:cursor "pointer"}}]
 
          [:defs
-          [:marker {:id "arrow-head" :markerWidth 10 :markerHeight 7 :refX 10 :refY 03.5 :orient "auto"}
+          [:marker {:id "arrow-head" :markerWidth 10 :markerHeight 7 :refX 10 :refY 3.5 :orient "auto"}
            [:polygon {:points "0 0, 10 3.5, 0 7" :stroke "white" :fill "white"}]]]
-         [:path {:d (str "M50 50 L " x-pos " " y-pos) :stroke "orange" :marker-end "url(#arrow-head"}]
+         [:path {:d (format "M~d ~d L ~d ~d" half-width half-height x-pos y-pos) :stroke "orange" :marker-end "url(#arrow-head"}]
 
-         [:circle {:cx 50 :cy 50 :r 40 :stroke "white" :fill "none" :stroke-width 1}]
-         ])))
-  )
+         [:circle {:cx half-width :cy half-height :r radius :stroke "white" :fill "none" :stroke-width 1}]]))))
 
 
 
 (defn draw!
   [timestamp]
   (let [{:keys [rect] :as state} @state-atom]
-    (->> [(:x rect) (:y rect)]
-         (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values])
-         webgl/draw-scene!)))
+    (-> (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values] [(:x rect) (:y rect)])
+        (assoc-in [:objects-to-draw :my-rect :uniforms :u_rotation :values] (:rotation rect))
+        webgl/draw-scene!)))
 
 (defn setup!
   []
@@ -144,7 +172,11 @@
                                                                                :values (:color rect)}
                                                                :u_translation {:name   "u_translation"
                                                                                :type   "uniform2fv"
-                                                                               :values [(:x rect) (:y rect)]}}
+                                                                               :values [(:x rect) (:y rect)]}
+                                                               :u_rotation    {:name   "u_rotation"
+                                                                               :type   "uniform2fv"
+                                                                               :values (:rotation rect)}
+                                                               }
                                                   :element    {:draw-type (.-TRIANGLES gl)
                                                                :offset    0
                                                                :count     18}}})))))
@@ -156,8 +188,8 @@
                         "Lesson - WebGL Fundamentals"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Translating a rect"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/translation_2d.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-translation.html"
+   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/rotation_2d_0.cljs"
+   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"
@@ -197,7 +229,12 @@
                                     :id        "y-slider"}]
                            [:span {:style {:color        "white"
                                            :margin-right "10px"}} (get-in @state-atom [:rect :y])]]
-                          [unit-circle]
+                          [unit-circle {:height    300
+                                        :width     300
+                                        :radius    120
+                                        :on-change (fn [{:keys [x y]}]
+                                                     (swap! state-atom assoc-in [:rect :rotation] [x y])
+                                                     (js/requestAnimationFrame draw!))}]
                           ]
 
                          ]))})

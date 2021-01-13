@@ -688,4 +688,78 @@ We continue to test if our design is good enough!
 ##### Conclusion
 Clojure is fun but mixing WebGL `gl` context state with an atom is... I don't know, they don't mix well, I guess.
 
+---
+
+### 16/30
+
+##### What the heck did we do yesterday?
+We completed the refactoring and made a first draft of moving an object in 2d space.
+
+##### What did we do today?
+Since we want to update uniform or attribute values in our state we had to make some changes. The current design had these two
+things as lists, which not seems optimal since we want to go in and tweak individual values in our render loop. 
+
+When we discovered this, we converted everything from lists to keys as this is the case for mose attributes. I guess 
+it looks kinda weird now, but it's a ton more efficient and simpler to understand than looping through a bunch of stuff
+and trying to find a value and update it.
+
+The render loop now looks like this:
+```clojure
+(defn draw!
+  [timestamp]
+  (let [{:keys [rect] :as state} @state-atom]
+    (->> [(:x rect) (:y rect)]
+         (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values])
+         webgl/draw-scene!)))
 ```
+
+and the setup:
+```clojure
+(assoc state :objects-to-draw
+                             {:my-rect {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                                  :attributes {:a_position {:name        "a_position"
+                                                                            :size        2
+                                                                            :type        (.-FLOAT gl)
+                                                                            :normalize   false
+                                                                            :stride      0
+                                                                            :offset      0
+                                                                            :buffer-info (webgl/create-buffer gl
+                                                                                                              {:data   (js/Float32Array. shapes/f-shape-2d)
+                                                                                                               :usage  (.-STATIC_DRAW gl)
+                                                                                                               :target (.-ARRAY-BUFFER gl)})}}
+                                                  :uniforms   {:u_resolution  {:name   "u_resolution"
+                                                                               :type   "uniform2f"
+                                                                               :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                               :u_color       {:name   "u_color"
+                                                                               :type   "uniform4fv"
+                                                                               :values (:color rect)}
+                                                               :u_translation {:name   "u_translation"
+                                                                               :type   "uniform2fv"
+                                                                               :values [(:x rect) (:y rect)]}}
+                                                  :element    {:draw-type (.-TRIANGLES gl)
+                                                               :offset    0
+                                                               :count     18}}})
+```
+
+##### Moving forward?
+I just had to implement the jQuery unit circle that is used in the tutorial. It is such a nice circle.
+
+##### Conclusion
+I forgot some trigonometry :*(
+
+### 17/30
+
+##### What the heck did we do yesterday?
+Got stuck at implementing the sweet unit-circle.
+
+##### What did we do today?
+Complete implementation of the unit circle, turns out that some jquery lib called `jquery-gman-circle.js`. It was 
+really fun once my trigonometry came back to me. With this cool unit circle we did the rotation chapter.
+
+##### Moving forward?
+Scaling.
+
+##### Conclusion
+I guess scaling is the next one. The good  thing with this new design is that doing these lessons is really fast.
+Even though, it's day 17th now and we have yet manage to create something from what we learned. Well, it will come.
+

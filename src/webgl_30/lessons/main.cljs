@@ -7,15 +7,24 @@
             [webgl-30.lessons.translation-2d-0 :as translation-2d-0]
             [webgl-30.lessons.translation-2d-1 :as translation-2d-1]
             [webgl-30.lessons.rotation-2d-0 :as rotation-2d-0]
+            [webgl-30.lessons.scale-2d :as scale-2d]
+            [webgl-30.lessons.matrices-2d_0 :as matrices-2d_0]
+            [webgl-30.lessons.matrices-2d_1 :as matrices-2d_1]
+            [webgl-30.lessons.matrices-2d_2 :as matrices-2d_2]
             ))
 
-(def initial-state {:active-page-index 5
-                    :lessons           [fundamentals-0/lesson
+(def initial-state {:active-page-index 9
+                    :lessons           [
+                                        fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
                                         translation-2d-0/lesson
                                         translation-2d-1/lesson
                                         rotation-2d-0/lesson
+                                        scale-2d/lesson
+                                        matrices-2d_0/lesson
+                                        matrices-2d_1/lesson
+                                        matrices-2d_2/lesson
                                         ]})
 
 (declare render-component)

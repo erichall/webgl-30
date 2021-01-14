@@ -1,15 +1,17 @@
-(ns webgl-30.lessons.translation-2d-1
+(ns webgl-30.lessons.scale-2d
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
-                    :rect {:x      0
-                           :y      0
-                           :width  100
-                           :height 30
-                           :color  [0.3 0.3 0.3 1]}})
+                    :rect {:x        0
+                           :y        0
+                           :rotation [0 1]
+                           :scale    [1 1]
+                           :width    100
+                           :height   30
+                           :color    [0.3 0.3 0.3 1]}})
 (defonce state-atom (r/atom nil))
 (when (nil? @state-atom)
   (reset! state-atom initial-state))
@@ -26,9 +28,17 @@
 
   uniform vec2 u_resolution;
   uniform vec2 u_translation;
+  uniform vec2 u_rotation;
+  uniform vec2 u_scale;
 
   void main() {
-       vec2 position = a_position + u_translation;
+        vec2 scaledPosition = a_position * u_scale;
+
+        vec2 rotatedPosition = vec2(
+          scaledPosition.x * u_rotation.y + scaledPosition.y * u_rotation.x,
+          scaledPosition.y * u_rotation.y - scaledPosition.x * u_rotation.x);
+
+       vec2 position = rotatedPosition + u_translation;
 
        // convert the position from pixels to 0.0 to 1.0
        vec2 zeroToOne = position / u_resolution;
@@ -42,14 +52,17 @@
        gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1); // * vec(1, -1) flips y so it's top-left corner.
   }")
 
-
+(defn format
+  [f & xs]
+  (apply cljs.pprint/cl-format nil f xs))
 
 (defn draw!
   [timestamp]
   (let [{:keys [rect] :as state} @state-atom]
-    (->> [(:x rect) (:y rect)]
-         (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values])
-         webgl/draw-scene!)))
+    (-> (assoc-in state [:objects-to-draw :my-rect :uniforms :u_translation :values] [(:x rect) (:y rect)])
+        (assoc-in [:objects-to-draw :my-rect :uniforms :u_rotation :values] (:rotation rect))
+        (assoc-in [:objects-to-draw :my-rect :uniforms :u_scale :values] (:scale rect))
+        webgl/draw-scene!)))
 
 (defn setup!
   []
@@ -74,7 +87,14 @@
                                                                                :values (:color rect)}
                                                                :u_translation {:name   "u_translation"
                                                                                :type   "uniform2fv"
-                                                                               :values [(:x rect) (:y rect)]}}
+                                                                               :values [(:x rect) (:y rect)]}
+                                                               :u_rotation    {:name   "u_rotation"
+                                                                               :type   "uniform2fv"
+                                                                               :values (:rotation rect)}
+                                                               :u_scale       {:name   "u_scale"
+                                                                               :type   "uniform2fv"
+                                                                               :values (:scale rect)}
+                                                               }
                                                   :element    {:draw-type (.-TRIANGLES gl)
                                                                :offset    0
                                                                :count     18}}})))))
@@ -83,11 +103,11 @@
   {:title           (fn []
                       [:div
                        [:h1 {:style {:font-family "monospace"}}
-                        "Lesson - WebGL 2D Translation"]
+                        "Lesson - WebGL 2D Scale"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Translating F"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/translation_2d.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-translation.html"
+                        "scaling in 2d"]])
+   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/scale_2d.cljs"
+   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-scale.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"
@@ -126,4 +146,38 @@
                                     :max       400
                                     :id        "y-slider"}]
                            [:span {:style {:color        "white"
-                                           :margin-right "10px"}} (get-in @state-atom [:rect :y])]]]]))})
+                                           :margin-right "10px"}} (get-in @state-atom [:rect :y])]]
+                          [:div {:style {:display        "flex"
+                                         :flex-direction "row"}}
+                           [:span {:style {:color        "white"
+                                           :white-space  "nowrap"
+                                           :margin-right "10px"}} "scale-x"]
+                           [slider {:on-change (fn [val]
+                                                 (swap! state-atom assoc-in [:rect :scale] [val (get-in @state-atom [:rect :scale 1])])
+                                                 (js/requestAnimationFrame draw!))
+                                    :value     (get-in @state-atom [:rect :scale 0])
+                                    :min       -5
+                                    :max       5
+                                    :step      0.01
+                                    :id        "x-scale"}]
+                           [:span {:style {:color        "white"
+                                           :margin-right "10px"}} (get-in @state-atom [:rect :scale 0])]]
+                          [:div {:style {:display        "flex"
+                                         :flex-direction "row"}}
+                           [:span {:style {:color        "white"
+                                           :white-space  "nowrap"
+                                           :margin-right "10px"}} "scale-y"]
+                           [slider {:on-change (fn [val]
+                                                 (swap! state-atom assoc-in [:rect :scale] [(get-in @state-atom [:rect :scale 0]) val])
+                                                 (js/requestAnimationFrame draw!))
+                                    :value     (get-in @state-atom [:rect :scale 1])
+                                    :min       -5
+                                    :max       5
+                                    :step      0.01
+                                    :id        "y-scale"}]
+                           [:span {:style {:color        "white"
+                                           :margin-right "10px"}} (->> (get-in @state-atom [:rect :scale 1])
+                                                                       (format "~4f"))]]
+                          ]
+
+                         ]))})

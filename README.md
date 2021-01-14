@@ -63,7 +63,7 @@ like a normal 2d canvas in the top left corner.
         gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
      }
 "
-}
+})
 ```
 
 So we can create a shader with this line
@@ -108,7 +108,7 @@ Before we had the canvas element inside `index.html`
 This felt kinda awkward since you couldn't really control it apart from doing `querySelector` on it and mutating it.
 And it was messy when we wanted to add other reagent components.
 
-The solution was to use some lovley hiccup and create it with cljs like this
+The solution was to use some lovely hiccup and create it with cljs like this
 ```clojure
 (defn webgl-canvas
   [{:keys [state trigger-event]}]
@@ -267,7 +267,7 @@ Not really sure what is going on with the `uniformXXX` functions and cljs.
 there are two functions, one is called `uniform2f` and the other one is called `uniform2fv`, with a `v` in the end,
 but they seem to be doing the same thing, the latter one works with a list as argument...
 I spent, 40 min trying to partially apply the function because of the variable arguments but
-without any success.. 
+without any success...
 like, why doesn't this work
 ```clojurue
 (apply (partial (.-uniform2f gl) location) [1 2 3]) ;; => Uncaught TypeError: Illegal invocation....
@@ -280,7 +280,7 @@ I think we start to get in the WebGL mojo by now. At least in the 2d space :) ho
 hidden `gl` state which all functions seem to mutate, but I guess that is the exact thing we are trying to do in clojure, other than 
 you can't really see the state inside the gl variable, or maybe there is a way to see it somehow?
 
-I guess it's still kinda awkward to deal with one of your "local" state in a atom, and then inside this state atom, I've put the
+I guess it's still kinda awkward to deal with one of your "local" state in an atom, and then inside this state atom, I've put the
 gl context which is being mutated on.
 
 ---
@@ -298,7 +298,7 @@ Well, with some help from cljs-slack I finally got a working variadic argument j
 ```clojure
 (.apply gl.uniform2f gl (into-array (cons location values)))
 ```
-but if the `2f` and `2fv` is the same function it is way easier to just use the `2fv` variant I guess, but alteast we got 
+but if the `2f` and `2fv` is the same function it is way easier to just use the `2fv` variant I guess, but at least we got 
 an example on how to do interop with js and apply a variadic set of arguments to a function.
 
 ##### What did we do today?
@@ -490,7 +490,7 @@ we did add something called frustum, or viewing frustum. I had no idea what that
 When peeking on today's mission, I came to understand why the F is not visible if we not move it manually. The reason for this is that we 
 have put the F right on top of you, at (0,0,0) and that's why you don't see it at first. I guess this is what cameras are for!
 
-Found some OG tutorial for matrixes and viewing: [https://developer.mozilla.org/](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection)
+Found some OG tutorial for matrices and viewing: [https://developer.mozilla.org/](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection)
 
 
 ##### What did we do today?
@@ -626,7 +626,7 @@ bump when trying to draw multiple stuff. So..... we had to do some more refactor
 ##### What did we do today?
 If you are familiar with the [Dreyfus model of skill acquisition](https://en.wikipedia.org/wiki/Dreyfus_model_of_skill_acquisition)
 you know that there are five levels going from novice to expert. If we relate that model to our work here, it is absolute clear that
-a complete WebGL novice, going at it for 14 days now! is trying to setup some general abstracted API to work with WebGL. 
+a complete WebGL novice, going at it for 14 days now! is trying to set up some general abstracted API to work with WebGL. 
 
 Even though, this is exactly what we have refactoring sessions for! But the most important thing that I've noticed myself struggle with
 is naming parameters. And not in the sense like, `should I call this x or the-element-i-want-in-the-list` I'm talking about
@@ -659,11 +659,11 @@ The journey from novice to master is exiting.
 ### 15/30
 
 ##### What the heck did we do yesterday?
-We manage to create a architecture that are able to draw lots of elements in a quite dynamic way. 
+We manage to create an architecture that are able to draw lots of elements in a quite dynamic way. 
 
 ##### What did we do today?
 Moved on towards 2d translation again but this time with the new design in use. It works quite good I assume. 
-The first bit of this tutorial is quite naive by calling `bufferData` in each render but we manage to get it up and running
+The first bit of this tutorial is quite naive by calling `bufferData` in each render, but we manage to get it up and running
 with a movable rect:
 ```clojure
 (defn draw!
@@ -713,7 +713,7 @@ The render loop now looks like this:
          webgl/draw-scene!)))
 ```
 
-and the setup:
+the setup:
 ```clojure
 (assoc state :objects-to-draw
                              {:my-rect {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
@@ -761,5 +761,68 @@ Scaling.
 
 ##### Conclusion
 I guess scaling is the next one. The good  thing with this new design is that doing these lessons is really fast.
-Even though, it's day 17th now and we have yet manage to create something from what we learned. Well, it will come.
+Even though, it's day 17th now, and we have yet manage to create something from what we learned. Well, it will come.
+
+---
+
+### 18/30
+
+##### What the heck did we do yesterday?
+We finished the unit circle build, and it works great, just have some scaling to do on the fonts.
+
+##### What did we do today?
+We got a ton of done today; all matrices and scaling and some refactoring. The core function `draw-scene` is quite clean now:
+```clojure
+(defn draw-scene!
+  [{:keys [gl objects-to-draw]}]
+
+  (prepare-canvas! gl)
+
+  (doseq [{:keys [program attributes uniforms element]} (vals objects-to-draw)]
+    (-> (use-program! gl program)
+        (set-uniforms! program (vals uniforms))
+        (set-attributes! program (vals attributes))
+        (draw-arrays! element))))
+```
+The strange thing though is that I made almost all functions that do some WebGL stuff and return nothing, return the `gl` context.
+Don't know yet if that is strange, but it helps passing functions around in threads like this.
+
+I also keep testing this new design architecture, and it keeps working in my favour. For example, you can do the normal stuff
+when you only change some uniforms or attributes. At the same time, you can go custom in your `draw!` loop, like this:
+```clojure
+(defn draw!
+  [timestamp]
+  (let [{:keys [rect gl] :as state} @state-atom]
+    (webgl/prepare-canvas! gl)
+
+    (let [{:keys [attributes uniforms element program]} (get-in state [:objects-to-draw :my-f])
+          {:keys [translation angle-rad scale]} rect
+          translation-matrix (m/translation-2d-matrix translation)
+          rotation-matrix (m/rotation-2d-matrix angle-rad)
+          scale-matrix (m/scaling-2d-matrix scale)]
+      (webgl/use-program! gl program)
+      (webgl/set-attributes! gl program (vals attributes))
+
+      (loop [matrix (m/identity-2d-matrix)
+             i 0]
+        (if (= i 5)
+          nil
+          (let [matrix (-> (m/matrix-multiply-2d matrix translation-matrix)
+                           (m/matrix-multiply-2d rotation-matrix)
+                           (m/matrix-multiply-2d scale-matrix))]
+            (->> (assoc-in uniforms [:u_matrix :values] matrix)
+                 vals
+                 (webgl/set-uniforms! gl program))
+            (webgl/draw-arrays! gl element)
+            (recur matrix (inc i))))))))
+```
+
+This example uses 5 different `F` where each `F` uses the previous matrix position. It looks like a finger when you rotate it!
+
+##### Moving forward?
+I think we do 3D stuff, and we get to test our design for reals! 
+
+##### Conclusion
+Kinda got bored now when stuff moves so smoothly. Let's burn through the 3d stuff we already done with this new setup and
+then start with textures and lighting.
 

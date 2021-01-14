@@ -185,9 +185,9 @@
   {:title           (fn []
                       [:div
                        [:h1 {:style {:font-family "monospace"}}
-                        "Lesson - WebGL Fundamentals"]
+                        "Lesson - WebGL 2D Rotation"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Translating a rect"]])
+                        "Rotation!"]])
    :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/rotation_2d_0.cljs"
    :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html"
    :start           (fn []

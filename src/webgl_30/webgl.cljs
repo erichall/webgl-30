@@ -44,10 +44,18 @@
       (set! (.-height canvas) d-height)
       (set! (.-width canvas) d-width))))
 
+(defn get-canvas-height
+  [gl]
+  (aget gl "canvas" "height"))
+
+(defn get-canvas-width
+  [gl]
+  (aget gl "canvas" "width"))
+
 (defn set-gl-viewport!
   [gl]
-  (let [width (aget gl "canvas" "width")
-        height (aget gl "canvas" "height")]
+  (let [width (get-canvas-width gl)
+        height (get-canvas-height gl)]
     (.viewport gl 0 0 width height)))
 
 (defn clear-canvas!
@@ -82,7 +90,7 @@
      :usage  usage}))
 
 
-(defn set-attribute
+(defn set-attribute!
   [gl program {:keys [name size type normalize stride offset buffer-info]}]
   (let [location (.getAttribLocation gl program name)]
     ;; Turn the variable on inside our GLSL VS program above.
@@ -90,21 +98,37 @@
 
     (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
     ;; Describe how to take the data from our buffer and give it to our shader.
-    (.vertexAttribPointer gl location size type normalize stride offset)))
+    (.vertexAttribPointer gl location size type normalize stride offset)
+    gl))
+
+(defn set-attributes!
+  [gl program attributes]
+  (doseq [attribute attributes]
+    (set-attribute! gl program attribute))
+  gl)
 
 (defn get-uniform-location
   [gl program name]
   (.getUniformLocation gl program name))
 
-(defn set-uniform
-  [^js gl program {:keys [type location values transpose name]}]
+(defn set-uniform!
+  [^js gl program {:keys [type values transpose name]}]
   (let [location (get-uniform-location gl program name)
         values (if (some? transpose) (cons transpose [values]) values)]
     (if (clojure.string/ends-with? type "v")
       (if (vector? values)
         (js-invoke gl type location values)
         (apply js-invoke gl type location values))
-      (.apply (aget gl type) gl (into-array (cons location values))))))
+      (.apply (aget gl type) gl (into-array (cons location values))))
+    gl))
+
+(defn set-uniforms!
+  [gl program uniforms]
+  {:pre  [(some? gl) (some? program)]
+   :post [(= gl %)]}
+  (doseq [uniform uniforms]
+    (set-uniform! gl program uniform))
+  gl)
 
 (defn set-geometry!
   "geo is a list of vertices"
@@ -155,26 +179,33 @@
 ;; :GL_INVALID_OPERATION : glDrawArrays: attempt to access out of range vertices in attribute 0
 ;; wrong size on the attribute.... 3 instead of 2....
 
-(defn draw-arrays
+(defn draw-arrays!
   [gl {:keys [draw-type offset count]}]
-  (.drawArrays gl draw-type offset count))
+  (.drawArrays gl draw-type offset count)
+  gl)
 
-(defn draw-scene!
-  [{:keys [gl objects-to-draw] :as state}]
+(defn prepare-canvas!
+  [gl]
   (resize-canvas-to-display-size gl)
   (set-gl-viewport! gl)
   (clear-canvas! gl)
+  gl)
+
+(defn use-program!
+  [gl program]
+  (.useProgram gl program)
+  gl)
+
+(defn draw-scene!
+  [{:keys [gl objects-to-draw]}]
+
+  (prepare-canvas! gl)
 
   (doseq [{:keys [program attributes uniforms element]} (vals objects-to-draw)]
-    (.useProgram gl program)
-
-    (doseq [uniform (vals uniforms)]
-      (set-uniform gl program uniform))
-
-    (doseq [attribute (vals attributes)]
-      (set-attribute gl program attribute))
-
-    (draw-arrays gl element)))
+    (-> (use-program! gl program)
+        (set-uniforms! program (vals uniforms))
+        (set-attributes! program (vals attributes))
+        (draw-arrays! element))))
 
 (defn link-shaders!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."

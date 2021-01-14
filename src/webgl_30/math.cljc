@@ -275,6 +275,39 @@
      (nth z-axis 0) (nth z-axis 1) (nth z-axis 2) 0
      (nth camera-position 0) (nth camera-position 1) (nth camera-position 2) 1]))
 
+(defn translation-2d-matrix
+  [[tx ty]]
+  [1 0 0
+   0 1 0
+   tx ty 1])
+
+(defn rotation-2d-matrix
+  [radians]
+  (let [c (Math/cos radians)
+        s (Math/sin radians)]
+    [c (- s) 0
+     s c 0
+     0 0 1]))
+
+(defn scaling-2d-matrix
+  [[sx sy]]
+  [sx 0 0
+   0 sy 0
+   0 0 1])
+
+(defn projection-2d-matrix
+  [width height]
+  ; flip y-axis so 0 is at top
+  [(/ 2 width) 0 0
+   0 (/ (- 2) height) 0
+   -1 1 1])
+
+(defn identity-2d-matrix
+  []
+  [1 0 0
+   0 1 0
+   0 0 1])
+
 (def matrix-operation-2d
   {:translation (fn [tx ty]
                   [1 0 0

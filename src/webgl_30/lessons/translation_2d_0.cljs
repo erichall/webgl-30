@@ -87,7 +87,7 @@
   {:title           (fn []
                       [:div
                        [:h1 {:style {:font-family "monospace"}}
-                        "Lesson - WebGL Fundamentals"]
+                        "Lesson - WebGL 2D Translation"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Translating a rect"]])
    :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/translation_2d.cljs"

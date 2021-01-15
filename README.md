@@ -826,3 +826,17 @@ I think we do 3D stuff, and we get to test our design for reals!
 Kinda got bored now when stuff moves so smoothly. Let's burn through the 3d stuff we already done with this new setup and
 then start with textures and lighting.
 
+---
+
+### 19/30
+
+##### What the heck did we do yesterday?
+We manage to achieve a quite nice draw-function inside our `webgl` namespace. Not much to mention about WebGL specific stuff unfortunate.
+
+##### What did we do today?
+We managed to plow through lots of tutorials again with this new design. It really works in favour for speed at least, compared to the mess we had before.
+
+##### Moving forward?
+
+##### Conclusion
+

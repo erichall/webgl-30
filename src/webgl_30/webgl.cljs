@@ -42,7 +42,8 @@
     (when-not (or (= (.-width canvas) d-width)
                   (= (.-height canvas) d-height))
       (set! (.-height canvas) d-height)
-      (set! (.-width canvas) d-width))))
+      (set! (.-width canvas) d-width))
+    gl))
 
 (defn get-canvas-height
   [gl]
@@ -56,13 +57,17 @@
   [gl]
   (let [width (get-canvas-width gl)
         height (get-canvas-height gl)]
-    (.viewport gl 0 0 width height)))
+    (.viewport gl 0 0 width height)
+    gl))
 
 (defn clear-canvas!
-  [gl]
-  (.clearColor gl 0 0 0 0)
-  ;(.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
-  (.clear gl (.-COLOR_BUFFER_BIT gl)))
+  ([gl]
+   (clear-canvas! gl false))
+  ([gl clear-depth?]
+   (.clearColor gl 0 0 0 0)
+   (if clear-depth?
+     (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
+     (.clear gl (.-COLOR_BUFFER_BIT gl)))))
 
 (defn bind-buffer
   [^js gl buffer target]
@@ -145,13 +150,6 @@
                                                          -175 100
                                                          ]) (.-STATIC_DRAW gl)))
 
-;(defn set-elements!
-;  [{:keys [gl elements]}]
-;  (doseq [element elements]
-;    (-> (bind-buffer gl (:buffer element))
-;        (buffer-data element)))
-;  gl)
-
 (defn set-rectangle!
   "Create a rectangle by using two triangles"
   [gl {:keys [x y width height]}]
@@ -185,24 +183,33 @@
   gl)
 
 (defn prepare-canvas!
-  [gl]
-  (resize-canvas-to-display-size gl)
-  (set-gl-viewport! gl)
-  (clear-canvas! gl)
-  gl)
+  ([gl] (prepare-canvas! gl false))
+  ([gl clear-depth?]
+   (->
+     (resize-canvas-to-display-size gl)
+     set-gl-viewport!
+     (clear-canvas! clear-depth?))
+   gl))
 
 (defn use-program!
   [gl program]
   (.useProgram gl program)
   gl)
 
+(defn enable-features!
+  [gl features]
+  (doseq [f (or features [])]
+    (.enable gl f))
+  gl)
+
 (defn draw-scene!
-  [{:keys [gl objects-to-draw]}]
+  [{:keys [gl objects-to-draw clear-depth?]}]
 
-  (prepare-canvas! gl)
+  (prepare-canvas! gl clear-depth?)
 
-  (doseq [{:keys [program attributes uniforms element]} (vals objects-to-draw)]
+  (doseq [{:keys [program attributes uniforms element features]} (vals objects-to-draw)]
     (-> (use-program! gl program)
+        (enable-features! features)
         (set-uniforms! program (vals uniforms))
         (set-attributes! program (vals attributes))
         (draw-arrays! element))))

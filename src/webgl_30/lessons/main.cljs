@@ -11,9 +11,14 @@
             [webgl-30.lessons.matrices-2d_0 :as matrices-2d_0]
             [webgl-30.lessons.matrices-2d_1 :as matrices-2d_1]
             [webgl-30.lessons.matrices-2d_2 :as matrices-2d_2]
+            [webgl-30.lessons.orthographic_3d_0 :as orthographic-3d-0]
+            [webgl-30.lessons.orthographic_3d_1 :as orthographic-3d-1]
+            [webgl-30.lessons.perspective_3d_0 :as perspective-3d-0]
+            [webgl-30.lessons.perspective_3d_1 :as perspective-3d-1]
+            [webgl-30.lessons.cameras-0 :as cameras-0]
             ))
 
-(def initial-state {:active-page-index 9
+(def initial-state {:active-page-index 14
                     :lessons           [
                                         fundamentals-0/lesson
                                         fundamentals-1/lesson
@@ -25,6 +30,11 @@
                                         matrices-2d_0/lesson
                                         matrices-2d_1/lesson
                                         matrices-2d_2/lesson
+                                        orthographic-3d-0/lesson
+                                        orthographic-3d-1/lesson
+                                        perspective-3d-0/lesson
+                                        perspective-3d-1/lesson
+                                        cameras-0/lesson
                                         ]})
 
 (declare render-component)

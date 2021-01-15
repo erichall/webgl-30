@@ -120,7 +120,7 @@
      (+ (* b20 a01) (* b21 a11) (* b22 a21))
      (+ (* b20 a02) (* b21 a12) (* b22 a22))]))
 
-(defn perspective-matrix
+(defn perspective-3d-matrix
   [field-of-view-in-radians aspect near far]
   (let [f (Math/tan (- (* Math/PI 0.5)
                        (* 0.5 field-of-view-in-radians)))
@@ -130,7 +130,7 @@
      0 0 (* range-in-view (+ near far)) (- 1)
      0 0 (* near far range-in-view 2) 0]))
 
-(defn rotation-3d-y
+(defn rotation-3d-y-matrix
   [angle-radians]
   (let [[c s] (cos-sin angle-radians)]
     [c 0 (- s) 0
@@ -138,8 +138,16 @@
      s 0 c 0
      0 0 0 1]))
 
-(defn translate-3d
-  [tx ty tz]
+(defn rotation-3d-x-matrix
+  [angle-radians]
+  (let [[c s] (cos-sin angle-radians)]
+    [1 0 0 0
+     0 c s 0
+     0 (- s) c 0
+     0 0 0 1]))
+
+(defn translation-3d-matrix
+  [[tx ty tz]]
   [1 0 0 0
    0 1 0 0
    0 0 1 0
@@ -308,60 +316,45 @@
    0 1 0
    0 0 1])
 
-(def matrix-operation-2d
-  {:translation (fn [tx ty]
-                  [1 0 0
-                   0 1 0
-                   tx ty 1])
-   :rotation    (fn [angle-radians]
-                  (let [c (Math/cos angle-radians)
-                        s (Math/sin angle-radians)]
-                    [c (- s) 0
-                     s c 0
-                     0 0 1]))
-   :scaling     (fn [sx sy]
-                  [sx 0 0
-                   0 sy 0
-                   0 0 1])
-   :projection  (fn [width height]
-                  ; flip y-axis so 0 is at top
-                  [(/ 2 width) 0 0
-                   0 (/ (- 2) height) 0
-                   -1 1 1])})
+(defn rotation-3d-z-matrix
+  [angle-radians]
+  (let [[c s] (cos-sin angle-radians)]
+    [c s 0 0
+     (- s) c 0 0
+     0 0 1 0
+     0 0 0 1]))
 
-(def matrix-operation-3d
-  {:translation translate-3d
-   :rotation-x  (fn [angle-radians]
-                  (let [[c s] (cos-sin angle-radians)]
-                    [1 0 0 0
-                     0 c s 0
-                     0 (- s) c 0
-                     0 0 0 1]))
-   :rotation-y  rotation-3d-y
-   :rotation-z  (fn [angle-radians]
-                  (let [[c s] (cos-sin angle-radians)]
-                    [c s 0 0
-                     (- s) c 0 0
-                     0 0 1 0
-                     0 0 0 1]))
-   :scaling     (fn [sx sy sz]
-                  [sx 0 0 0
-                   0 sy 0 0
-                   0 0 sz 0
-                   0 0 0 1])
-   :projection  (fn [width height depth]
-                  ; flip y-axis so 0 is at top
-                  [(/ 2 width) 0 0 0
-                   0 (/ (- 2) height) 0 0
-                   0 0 (/ 2 depth) 0
-                   -1 1 0 1])
-   :z->w        (fn [fudge-factor]
-                  [1 0 0 0
-                   0 1 0 0
-                   0 0 1 fudge-factor
-                   0 0 0 0 1])
-   :perspective perspective-matrix
-   })
+(defn scaling-3d-matrix
+  [[sx sy sz]]
+  [sx 0 0 0
+   0 sy 0 0
+   0 0 sz 0
+   0 0 0 1])
+
+(defn z->w-matrix
+  [fudge-factor]
+  [1 0 0 0
+   0 1 0 0
+   0 0 1 fudge-factor
+   0 0 0 0 1])
+(defn projection-3d-matrix
+  [width height depth]
+  ; flip y-axis so 0 is at top
+  [(/ 2 width) 0 0 0
+   0 (/ (- 2) height) 0 0
+   0 0 (/ 2 depth) 0
+   -1 1 0 1])
+
+(defn orthographic-matrix
+  [left right bottom top near far]
+  [(/ 2 (- right left)) 0 0 0
+   0 (/ 2 (- top bottom)) 0 0
+   0 0 (/ 2 (- near far)) 0
+
+   (/ (+ left right) (- left right))
+   (/ (+ bottom top) (- bottom top))
+   (/ (+ near far) (- near far))
+   1])
 
 
 

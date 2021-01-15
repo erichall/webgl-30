@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
-            [webgl-30.component :refer [webgl-canvas slider]]))
+            [webgl-30.component :refer [webgl-canvas slider unit-circle]]))
 
 (def initial-state {:gl   nil
                     :rect {:x        0
@@ -47,100 +47,6 @@
 
        gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1); // * vec(1, -1) flips y so it's top-left corner.
   }")
-
-(defn map-coordinate
-  [s src-min src-max res-min res-max]
-  (+
-    (*
-      (/ (- s src-min)
-         (- src-max src-min))
-      (- res-max res-min))
-    res-min))
-
-(defn format
-  [f & xs]
-  (apply cljs.pprint/cl-format nil f xs))
-
-(defn unit-circle
-  [{:keys [height width radius] :or {height 100 width 100 radius 40}}]
-  (let [local-state-atom (r/atom {:x-pos       (- (/ width 2) radius)
-                                  :y-pos       (/ height 2)
-                                  :width       width
-                                  :half-width  (/ width 2)
-                                  :height      height
-                                  :half-height (/ height 2)
-                                  :min-x       (- (/ width 2) radius)
-                                  :max-x       (+ (/ width 2) radius)
-                                  :min-y       (- (/ height 2) radius)
-                                  :max-y       (+ (/ height 2) radius)
-                                  :radius      radius
-                                  :mouse-down  false})]
-    (fn [{:keys [height width radius on-change] :or {height 100 width 100 radius 40}}]
-      (let [{:keys [x-pos y-pos mouse-down min-x max-x min-y max-y half-width half-height]} @local-state-atom
-            txt-style {:font-size "5px" :opacity 0.7 :user-select "none"}]
-        [:svg {:viewBox       (str "0 0 " width " " height)
-               :height        height
-               :width         width
-               :id            "unit-circle"
-               :style         {:border "1px dashed orange"}
-               :on-mouse-up   (fn [evt] (swap! local-state-atom assoc :mouse-down false))
-               :on-mouse-move (fn [evt]
-                                (when mouse-down
-                                  (let [svg (js/document.querySelector "#unit-circle")
-                                        pt (-> svg .createSVGPoint)
-                                        _ (aset pt "x" (aget evt "clientX"))
-                                        _ (aset pt "y" (aget evt "clientY"))
-                                        svg-p (.matrixTransform pt (.inverse (.getScreenCTM svg)))
-
-                                        x (aget svg-p "x")
-                                        y (aget svg-p "y")
-                                        unit-x (map-coordinate x min-x max-x -1 1)
-                                        unit-y (map-coordinate y min-y max-y -1 1)
-                                        angle-rad (Math/atan2 unit-y unit-x)
-                                        cos-x (Math/cos angle-rad)
-                                        sin-y (Math/sin angle-rad)
-                                        svg-x (map-coordinate cos-x -1 1 min-x max-x)
-                                        svg-y (map-coordinate sin-y -1 1 min-y max-y)]
-                                    (swap! local-state-atom (fn [state]
-                                                              (-> (assoc state :x-pos svg-x)
-                                                                  (assoc :y-pos svg-y))))
-                                    (on-change {:x cos-x :y sin-y :angle-rad angle-rad}))))
-               :xmlns         "http://www.w3.org/2000/svg"}
-         ;; vertical
-         [:path {:d (str "M" min-x " 0 L" min-x " " width) :stroke "gray"}]
-         [:path {:d (format "M~d 0 L~d ~d" half-width half-width width) :stroke "gray"}]
-         [:path {:d (format "M~d 0 L~d ~d" half-width half-width width) :stroke "gray"}]
-         [:path {:d (format "M~d 0 L~d ~d" max-x max-x height) :stroke "gray"}]
-         ;; horizontal
-         [:path {:d (format "M0 ~d L~d ~d" min-y width min-y) :stroke "gray"}]
-         [:path {:d (format "M0 ~d L~d ~d" half-height width half-height) :stroke "gray"}]
-         [:path {:d (format "M0 ~d L~d ~d" max-y width max-y) :stroke "gray"}]
-
-         [:text {:x (+ half-width 2) :y (+ half-height 5) :fill "white" :style txt-style} "0"]
-         [:text {:x (+ min-x 2) :y (+ half-height 5) :fill "white" :style txt-style} "-1"]
-         [:text {:x (- max-y 5) :y (+ half-height 5) :fill "white" :style txt-style} "1"]
-
-         [:text {:x (+ half-width 2) :y (+ min-y 5) :fill "white" :style txt-style} "1"]
-         [:text {:x (+ half-width 2) :y (- max-y 2) :fill "white" :style txt-style} "-1"]
-
-         [:polygon {:points (str half-width "," half-height " " (int x-pos) "," (int y-pos) " " (int x-pos) "," half-height)
-                    :fill   "rgba(34, 167, 240, 0.6)"}]
-
-         [:text {:x x-pos :y (+ half-height 5) :fill "white" :style {:font-size "4px" :user-select "none"}} (str "x=" (cljs.pprint/cl-format nil "~,2f" (map-coordinate x-pos 10 90 -1 1)))]
-         [:text {:x x-pos :y y-pos :fill "white" :style {:font-size "4px" :user-select "none"}} (str "y=" (cljs.pprint/cl-format nil "~,2f" (map-coordinate y-pos 10 90 -1 1)))]
-
-         [:circle {:cx            x-pos :cy y-pos :r "7px" :stroke "white" :fill "rgba(170,188,255, 0.7)" :stroke-width 1
-                   :on-mouse-down (fn [] (swap! local-state-atom assoc :mouse-down true))
-                   :style         {:cursor "pointer"}}]
-
-         [:defs
-          [:marker {:id "arrow-head" :markerWidth 10 :markerHeight 7 :refX 10 :refY 3.5 :orient "auto"}
-           [:polygon {:points "0 0, 10 3.5, 0 7" :stroke "white" :fill "white"}]]]
-         [:path {:d (format "M~d ~d L ~d ~d" half-width half-height x-pos y-pos) :stroke "orange" :marker-end "url(#arrow-head"}]
-
-         [:circle {:cx half-width :cy half-height :r radius :stroke "white" :fill "none" :stroke-width 1}]]))))
-
-
 
 (defn draw!
   [timestamp]

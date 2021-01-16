@@ -67,7 +67,8 @@
    (.clearColor gl 0 0 0 0)
    (if clear-depth?
      (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
-     (.clear gl (.-COLOR_BUFFER_BIT gl)))))
+     (.clear gl (.-COLOR_BUFFER_BIT gl)))
+   gl))
 
 (defn bind-buffer
   [^js gl buffer target]
@@ -135,37 +136,6 @@
     (set-uniform! gl program uniform))
   gl)
 
-(defn set-geometry!
-  "geo is a list of vertices"
-  [{:keys [gl] :as state} geo]
-  (buffer-data gl {:target   (.-ARRAY_BUFFER gl)
-                   :src-data (js/Float32Array. geo)
-                   :usage    (.-STATIC_DRAW gl)})
-  state)
-
-(defn set-triangle!
-  [gl]
-  (.bufferData gl (.-ARRAY_BUFFER gl) (js/Float32Array. [0 -100
-                                                         150 125
-                                                         -175 100
-                                                         ]) (.-STATIC_DRAW gl)))
-
-(defn set-rectangle!
-  "Create a rectangle by using two triangles"
-  [gl {:keys [x y width height]}]
-  (let [x1 x
-        x2 (+ x width)
-        y1 y
-        y2 (+ y height)]
-    (buffer-data gl {:target   (.-ARRAY-BUFFER gl)
-                     :src-data (js/Float32Array. [x1, y1,
-                                                  x2, y1,
-                                                  x1, y2,
-                                                  x1, y2,
-                                                  x2, y1,
-                                                  x2, y2])
-                     :usage    (.-STATIC_DRAW gl)})))
-
 (defn get-context
   [canvas-id]
   (->
@@ -176,6 +146,10 @@
 ;; funny error
 ;; :GL_INVALID_OPERATION : glDrawArrays: attempt to access out of range vertices in attribute 0
 ;; wrong size on the attribute.... 3 instead of 2....
+;; another one
+;;  INVALID_VALUE: enableVertexAttribArray: index out of range
+;;  INVALID_VALUE: vertexAttribPointer: index out of range
+;;    SOL => wrong name on attribute :)
 
 (defn draw-arrays!
   [gl {:keys [draw-type offset count]}]
@@ -212,7 +186,8 @@
         (enable-features! features)
         (set-uniforms! program (vals uniforms))
         (set-attributes! program (vals attributes))
-        (draw-arrays! element))))
+        (draw-arrays! element)))
+  gl)
 
 (defn link-shaders!
   "Create a WebGL Program with a Vertex shader and a Fragment shader."
@@ -239,6 +214,21 @@
      x1 y2
      x2 y1
      x2 y2]))
+
+(defn create-texture!
+  [gl texture-data]
+  (let [texture (.createTexture gl)]
+    (.bindTexture gl (first texture-data) texture)
+    (println texture-data)
+    (apply js-invoke gl "texImage2D" texture-data)
+    ;(.texImage2D gl target level internal-format width height border format type pixels)
+    gl))
+
+(defn create-texture-with-mipmap
+  [gl texture-data]
+  (-> (create-texture! gl texture-data)
+      (.generateMipmap (first texture-data)))
+  gl)
 
 
 

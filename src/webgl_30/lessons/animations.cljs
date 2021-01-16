@@ -1,19 +1,19 @@
-(ns webgl-30.lessons.cameras-0
+(ns webgl-30.lessons.animations
   (:require [reagent.core :as r]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
-            [webgl-30.component :refer [webgl-canvas unit-circle]]))
+            [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
-                    :rect {:translation      [-150 0 -360]
-                           :rotation         (mapv m/deg->rad [190 40 320])
-                           :camera-angle-rad 0
-                           :scale            [1 1 1]
-                           :field-of-view    (m/deg->rad 60)
-                           :width            100
-                           :height           30
-                           :color            [0.3 0.3 0.3 1]}})
+                    :rect {:translation    [200 170 100]
+                           :rotation       (mapv m/deg->rad [190 40 320])
+                           :scale          [1 1 1]
+                           :rotation-speed 1.2
+                           :then           0
+                           :width          100
+                           :height         30
+                           :color          [0.3 0.3 0.3 1]}})
 (defonce state-atom (r/atom nil))
 (when (nil? @state-atom)
   (reset! state-atom initial-state))
@@ -33,7 +33,6 @@
    attribute vec4 a_color;
 
   uniform mat4 u_matrix;
-
   varying vec4 v_color;
 
   void main() {
@@ -45,61 +44,29 @@
 
 (defn multiply-matrices
   [{:keys [rect gl]}]
-  (let [{:keys [translation scale rotation fudge-factor field-of-view]} rect
-        aspect (webgl/get-aspect gl)
-        z-near 1
-        z-far 2000
-        perspective-matrix (m/perspective-3d-matrix field-of-view aspect z-near z-far)
+  (let [{:keys [translation scale rotation]} rect
+        projection-matrix (m/projection-3d-matrix (webgl/get-canvas-width gl) (webgl/get-canvas-height gl) 400)
+        orthographic-matrix (m/orthographic-matrix 0 (webgl/get-canvas-width gl) (webgl/get-canvas-height gl) 0 400 -400)
         translation-matrix (m/translation-3d-matrix translation)
         rotation-matrix-x (m/rotation-3d-x-matrix (nth rotation 0))
         rotation-matrix-y (m/rotation-3d-y-matrix (nth rotation 1))
         rotation-matrix-z (m/rotation-3d-z-matrix (nth rotation 2))
         scale-matrix (m/scaling-3d-matrix scale)]
-    (-> (m/matrix-multiply-3d perspective-matrix translation-matrix)
+    (-> (m/matrix-multiply-3d orthographic-matrix translation-matrix)
         (m/matrix-multiply-3d rotation-matrix-x)
         (m/matrix-multiply-3d rotation-matrix-y)
         (m/matrix-multiply-3d rotation-matrix-z)
         (m/matrix-multiply-3d scale-matrix))))
 
-(defn format
-  [f & xs]
-  (apply cljs.pprint/cl-format nil f xs))
-
 (defn draw!
-  [timestamp]
-  (let [{:keys [gl rect clear-depth?] :as state} @state-atom
-        {:keys [field-of-view camera-angle-rad]} rect
-        n-fs 5
-        radius 200
-        aspect (webgl/get-aspect gl)
-        z-near 1
-        z-far 2000
-        projection-matrix (m/perspective-3d-matrix field-of-view aspect z-near z-far)
-        camera-matrix (-> (m/rotation-3d-y-matrix camera-angle-rad)
-                          (m/matrix-multiply-3d (m/translation-3d-matrix [0 0 (* radius 1.5)])))
-        view-matrix (m/invert-4x4 camera-matrix)
-        view-projection-matrix (m/matrix-multiply-3d projection-matrix view-matrix)
-        {:keys [program features attributes uniforms element]} (get-in state [:objects-to-draw :my-f])]
-
-    (-> (webgl/prepare-canvas! gl clear-depth?)
-        (webgl/use-program! program)
-        (webgl/enable-features! features)
-        (webgl/set-attributes! program (vals attributes)))
-
-
-    (doseq [ii (range n-fs)
-            :let [angle (/ (* ii Math/PI 2) n-fs)
-                  x (* radius (Math/cos angle))
-                  y (* radius (Math/sin angle))
-                  translation-matrix (m/translation-3d-matrix [x 0 y])]]
-
-      (->> (assoc-in uniforms [:u_matrix :values] (m/matrix-multiply-3d view-projection-matrix translation-matrix))
-           vals
-           (webgl/set-uniforms! gl program))
-
-      (webgl/draw-arrays! gl element)
-      )
-    ))
+  [timestamp state]
+  (let [{:keys [rect] :as s} state
+        now (* timestamp 0.001)
+        delta-time (- now (:then rect))
+        state (assoc-in s [:rect :rotation 1] (+ (get-in rect [:rotation 1]) (* (:rotation-speed rect) delta-time)))]
+    (-> (assoc-in state [:objects-to-draw :my-f :uniforms :u_matrix :values] (multiply-matrices state))
+        webgl/draw-scene!)
+    (js/requestAnimationFrame (fn [t] (draw! t (assoc-in state [:rect :then] now))))))
 
 (defn setup!
   []
@@ -129,17 +96,13 @@
                                                                                                        {:data   (js/Uint8Array. shapes/f-shape-3d-color)
                                                                                                         :usage  (.-STATIC_DRAW gl)
                                                                                                         :target (.-ARRAY-BUFFER gl)})}}
-                                           :uniforms   {:u_resolution  {:name   "u_resolution"
-                                                                        :type   "uniform2f"
-                                                                        :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                        :u_matrix      {:name      "u_matrix"
-                                                                        :type      "uniformMatrix4fv"
-                                                                        :transpose false
-                                                                        :values    (multiply-matrices state)}
-                                                        :u_fudgeFactor {:name   "u_fudgeFactor"
-                                                                        :type   "uniform1f"
-                                                                        :values [1]}
-                                                        }
+                                           :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                       :type   "uniform2f"
+                                                                       :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                        :u_matrix     {:name      "u_matrix"
+                                                                       :type      "uniformMatrix4fv"
+                                                                       :transpose false
+                                                                       :values    (multiply-matrices state)}}
                                            :element    {:draw-type (.-TRIANGLES gl)
                                                         :offset    0
                                                         :count     (* 16 6)}}}))))))
@@ -151,12 +114,12 @@
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/perspective_3d_0.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html"
+   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/orthographic_3d_0.cljs"
+   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html"
    :start           (fn []
                       (let [canvas-id "translation"
                             state @state-atom
-                            {:keys [translation scale rotation field-of-view]} (:rect state)]
+                            {:keys [translation scale rotation]} (:rect state)]
                         [:div {:style {:display        "flex"
                                        :flex-direction "row"}}
                          [webgl-canvas {:height   400
@@ -166,12 +129,4 @@
                                                     (do
                                                       (swap! state-atom assoc :gl (webgl/get-context canvas-id))
                                                       (setup!)
-                                                      (js/requestAnimationFrame draw!)))}]
-                         [:div {:style {:margin-left "30px"}}
-                          [unit-circle {:height    300
-                                        :width     300
-                                        :radius    120
-                                        :on-change (fn [{:keys [angle-rad]}]
-                                                     (swap! state-atom assoc-in [:rect :camera-angle-rad] angle-rad)
-                                                     (js/requestAnimationFrame draw!))}]
-                          ]]))})
+                                                      (js/requestAnimationFrame (fn [t] (draw! t @state-atom)))))}]]))})

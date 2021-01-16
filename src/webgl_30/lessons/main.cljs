@@ -16,9 +16,12 @@
             [webgl-30.lessons.perspective_3d_0 :as perspective-3d-0]
             [webgl-30.lessons.perspective_3d_1 :as perspective-3d-1]
             [webgl-30.lessons.cameras-0 :as cameras-0]
+            [webgl-30.lessons.cameras-1 :as cameras-1]
+            [webgl-30.lessons.animations :as animations]
+            [webgl-30.lessons.textures-0 :as textures-0]
             ))
 
-(def initial-state {:active-page-index 14
+(def initial-state {:active-page-index 17
                     :lessons           [
                                         fundamentals-0/lesson
                                         fundamentals-1/lesson
@@ -35,6 +38,9 @@
                                         perspective-3d-0/lesson
                                         perspective-3d-1/lesson
                                         cameras-0/lesson
+                                        cameras-1/lesson
+                                        animations/lesson
+                                        textures-0/lesson
                                         ]})
 
 (declare render-component)

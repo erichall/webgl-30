@@ -1,4 +1,4 @@
-(ns webgl-30.lessons.cameras-0
+(ns webgl-30.lessons.cameras-1
   (:require [reagent.core :as r]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
@@ -74,10 +74,14 @@
         aspect (webgl/get-aspect gl)
         z-near 1
         z-far 2000
+        f-position [radius 0 0]
         projection-matrix (m/perspective-3d-matrix field-of-view aspect z-near z-far)
         camera-matrix (-> (m/rotation-3d-y-matrix camera-angle-rad)
                           (m/matrix-multiply-3d (m/translation-3d-matrix [0 0 (* radius 1.5)])))
-        view-matrix (m/invert-4x4 camera-matrix)
+        camera-position [(nth camera-matrix 12) (nth camera-matrix 13) (nth camera-matrix 14)]
+        up [0 1 0]
+        look-at-matrix (m/look-at-matrix camera-position f-position up)
+        view-matrix (m/invert-4x4 look-at-matrix)
         view-projection-matrix (m/matrix-multiply-3d projection-matrix view-matrix)
         {:keys [program features attributes uniforms element]} (get-in state [:objects-to-draw :my-f])]
 
@@ -168,6 +172,7 @@
                                                       (setup!)
                                                       (js/requestAnimationFrame draw!)))}]
                          [:div {:style {:margin-left "30px"}}
+
                           [unit-circle {:height    300
                                         :width     300
                                         :radius    120

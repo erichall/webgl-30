@@ -837,6 +837,27 @@ We manage to achieve a quite nice draw-function inside our `webgl` namespace. No
 We managed to plow through lots of tutorials again with this new design. It really works in favour for speed at least, compared to the mess we had before.
 
 ##### Moving forward?
+We have cameras and animation ahead, and then we are up to speed.
 
 ##### Conclusion
+We are up to speed!
+
+---
+
+### 20/30
+
+##### What the heck did we do yesterday?
+We did animation and cameras. I think we got a better understanding of what the `frustum` are now. 
+It's that 4 sided cone depicted in the tutorial (webgl-3d-perspective.html)[https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html].
+
+##### What did we do today?
+We completed Animations, cameras and started to work on textures. We had some issues with an incorrect spelled attribute name, 
+and the lovely WebGL error message is: `INVALID_VALUE: vertexAttribPointer: index out of range`...
+
+##### Moving forward?
+Textures!
+
+##### Conclusion
+I think WebGL really starting to get to me, it's quite fun! We just need to start doing some real project and really get a
+feel for it and maybe we can soon advance inside the novice bracket. Still, miles to be proficient in WebGL.
 

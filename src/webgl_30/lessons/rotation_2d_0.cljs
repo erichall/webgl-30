@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas slider unit-circle]]))
 
 (def initial-state {:gl   nil
@@ -94,8 +95,8 @@
                         "Lesson - WebGL 2D Rotation"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Rotation!"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/rotation_2d_0.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-rotation.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-2d-rotation.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"

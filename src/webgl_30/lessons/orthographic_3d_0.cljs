@@ -3,6 +3,7 @@
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
@@ -112,8 +113,8 @@
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/orthographic_3d_0.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-3d-orthographic.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-3d-orthographic.html"
    :start           (fn []
                       (let [canvas-id "translation"
                             state @state-atom

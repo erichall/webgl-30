@@ -1,5 +1,6 @@
 (ns webgl-30.component
-  (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [webgl-30.core :refer [format]]))
 
 (defn deg->rad
   [a]
@@ -158,12 +159,17 @@
 (defn webgl-canvas
   [{:keys [height width id on-mount]}]
   (r/create-class
-    {:display-name        "webgl-canvas"
-     :reagent-render      (fn [] [:canvas {:width  (str width "px")
-                                           :height (str height "px")
-                                           :style  {:border "1px dashed green"}
-                                           :id     id}])
-     :component-did-mount on-mount}))
+    {:display-name           "webgl-canvas"
+     :reagent-render         (fn [] [:canvas {:width  (str width "px")
+                                              :height (str height "px")
+                                              :style  {:border "1px dashed green"}
+                                              :id     id}])
+     :component-did-mount    on-mount
+     :component-will-unmount (fn []
+                               (let [gl (-> (str "#" id)
+                                            js/document.querySelector
+                                            (.getContext "webgl"))]
+                                 (.loseContext (.getExtension gl "WEBGL_lose_context"))))}))
 
 (defn app
   [{:keys [state trigger-event]}]
@@ -174,9 +180,6 @@
           :on-click (fn [] (trigger-event :toggle-animation))} (if (get-in state [:animate :running?]) "Stop" "Play")]
    [webgl-canvas {:trigger-event trigger-event :state state}]])
 
-(defn format
-  [f & xs]
-  (apply cljs.pprint/cl-format nil f xs))
 
 (defn map-coordinate
   [s src-min src-max res-min res-max]

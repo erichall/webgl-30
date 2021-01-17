@@ -5,19 +5,20 @@
 
  :dev-http     {3449 "resources/public/"}
 
- :builds       {:app  {:output-dir "resources/public/"
-                       :asset-path "."
-                       :target     :browser
-                       :modules    {:main {
-                                           :init-fn webgl-30.lessons.main/init!
-                                           }}
-                       :devtools   {
-                                    :after-load webgl-30.lessons.main/reload!
-                                    }
-                       }
+ :builds       {:app {:output-dir    "resources/public/"
+                      :asset-path    "."
+                      :target        :browser
+                      :module-loader true
+                      :modules
+                                     {:main
+                                      {:init-fn webgl-30.lessons.main/init!}
+                                      :fundamentals-0
+                                      {:entries    webgl-30.lessons.fundamentals-0
+                                       :depends-on #{:main}}
+                                      }
+                      :devtools      {
+                                      :after-load webgl-30.lessons.main/reload!
+                                      }
+                      }
 
-                :test {:target    :node-test
-                       :output-to "out/node-tests.js"
-                       :runner-ns webgl-30.test-all         ;; TODO
-                       :main      webgl-30.test-all/init
-                       }}}
+                }}

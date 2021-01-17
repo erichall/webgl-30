@@ -4,6 +4,10 @@
   [x]
   (not (nil? x)))
 
+(defn power-of-two?
+  [x]
+  (and (= (bit-and x (- x)) x) (> x 0)))
+
 (defn get-aspect
   [gl]
   (/ (aget gl "canvas" "clientWidth") (aget gl "canvas" "clientHeight")))
@@ -176,13 +180,26 @@
     (.enable gl f))
   gl)
 
+(defn set-texture-param!
+  [gl param]
+  (let [f (first param)]
+    (apply js-invoke gl f (rest param)))
+  gl)
+
+(defn set-texture-params!
+  [gl params]
+  (doseq [p params]
+    (set-texture-param! gl p))
+  gl)
+
 (defn draw-scene!
   [{:keys [gl objects-to-draw clear-depth?]}]
 
   (prepare-canvas! gl clear-depth?)
 
-  (doseq [{:keys [program attributes uniforms element features]} (vals objects-to-draw)]
+  (doseq [{:keys [program attributes uniforms element features textures]} (vals objects-to-draw)]
     (-> (use-program! gl program)
+        (set-texture-params! (-> textures :params vals))
         (enable-features! features)
         (set-uniforms! program (vals uniforms))
         (set-attributes! program (vals attributes))
@@ -215,20 +232,45 @@
      x2 y1
      x2 y2]))
 
+(defn- create-a-texture
+  [gl]
+  (.createTexture gl))
+
 (defn create-texture!
-  [gl texture-data]
-  (let [texture (.createTexture gl)]
-    (.bindTexture gl (first texture-data) texture)
-    (println texture-data)
-    (apply js-invoke gl "texImage2D" texture-data)
-    ;(.texImage2D gl target level internal-format width height border format type pixels)
-    gl))
+  ([gl texture-data] (create-texture! gl nil texture-data))
+  ([gl texture texture-data]
+   (let [texture (if (some? texture) texture (create-a-texture gl))]
+     (.bindTexture gl (first texture-data) texture)
+     (apply js-invoke gl "texImage2D" texture-data)
+     texture)))
 
 (defn create-texture-with-mipmap
-  [gl texture-data]
-  (-> (create-texture! gl texture-data)
-      (.generateMipmap (first texture-data)))
-  gl)
+  ([gl texture-data] (create-texture-with-mipmap gl nil texture-data))
+  ([gl texture texture-data]
+   (let [texture (create-texture! gl texture texture-data)]
+     (.generateMipmap gl (first texture-data))
+     texture)))
+
+;; TOOD is there some async function naming convention in clojure??
+(defn create-texture-from-img
+  ([gl img-name on-load] (create-texture-from-img gl img-name on-load nil))
+  ([gl img-name on-load texture]
+   (let [img (js/Image.)
+         texture (if (some? texture) texture (create-a-texture gl))]
+     (aset img "src" img-name)
+     (.addEventListener img
+                        "load"
+                        (fn []
+                          (-> (create-texture-with-mipmap gl
+                                                          texture
+                                                          [(.-TEXTURE_2D gl)
+                                                           0
+                                                           (.-RGBA gl)
+                                                           (.-RGBA gl)
+                                                           (.-UNSIGNED_BYTE gl)
+                                                           img])
+                              on-load)))
+     texture)))
 
 
 

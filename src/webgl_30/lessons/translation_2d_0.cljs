@@ -1,7 +1,7 @@
 (ns webgl-30.lessons.translation-2d-0
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
-            [webgl-30.math :as math]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
@@ -90,8 +90,8 @@
                         "Lesson - WebGL 2D Translation"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Translating a rect"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/translation_2d.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-translation.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-2d-translation.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"

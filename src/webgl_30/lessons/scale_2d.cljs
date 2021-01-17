@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
@@ -106,8 +107,8 @@
                         "Lesson - WebGL 2D Scale"]
                        [:h4 {:style {:font-family "monospace"}}
                         "scaling in 2d"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/scale_2d.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-scale.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-2d-scale.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"

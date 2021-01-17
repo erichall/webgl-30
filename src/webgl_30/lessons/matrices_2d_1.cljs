@@ -3,6 +3,7 @@
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
@@ -123,8 +124,8 @@
                         "Lesson - WebGL 2D Matrices"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/matrices_2d_1.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-2d-matrices.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-2d-matrices.html"
    :start           (fn []
                       (let [canvas-id "translation"]
                         [:div {:style {:display        "flex"

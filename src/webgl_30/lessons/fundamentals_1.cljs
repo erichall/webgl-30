@@ -1,5 +1,6 @@
 (ns webgl-30.lessons.fundamentals-1
   (:require [webgl-30.webgl :as webgl]
+            [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas]]))
 
 (def initial-state {:gl nil})
@@ -69,8 +70,8 @@
                         "Lesson - WebGL Fundamentals"]
                        [:h4 {:style {:font-family "monospace"}}
                         "A box with translated coordinates"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/fundamentals_1.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-fundamentals.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-fundamentals.html"
    :start           (fn []
                       (let [canvas-id "fundamentals"]
                         [webgl-canvas {:height   400

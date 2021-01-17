@@ -861,3 +861,21 @@ Textures!
 I think WebGL really starting to get to me, it's quite fun! We just need to start doing some real project and really get a
 feel for it and maybe we can soon advance inside the novice bracket. Still, miles to be proficient in WebGL.
 
+### 21/30
+
+##### What the heck did we do yesterday?
+We started with textures and completed animation and cameras. We got a bit deeper knowledge about `frustum` but it's still quite general.
+
+##### What did we do today?
+Got stuck a bit on the first texture lesson trying to figure out a good setup to incorporate textures in our current design.
+
+Anyhow, we dabbed around with texture coordinates as WebGL sees a texture coordinate starting from the left-bottom with origin and grows up and to the right.
+After learning about this, we continued with what happens when a texture extends above 1. We did some setup for different settings on how to handle the behaviour 
+such as to repeat the whole texture again, clamp to the edge or mirror the endings of the texture.
+
+##### Moving forward?
+Continue with textures.
+
+##### Conclusion
+It' already day 21?!
+

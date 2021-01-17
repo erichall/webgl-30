@@ -1,6 +1,5 @@
-(ns webgl-30.lessons.textures-0
+(ns webgl-30.lessons.textures-1
   (:require [reagent.core :as r]
-            [shadow.resource :as rc]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
@@ -10,7 +9,7 @@
 (def initial-state {:gl   nil
                     :rect {:translation    [200 170 100]
                            :rotation       (mapv m/deg->rad [190 40 320])
-                           :scale          [1 1 1]
+                           :scale          [2 2 2]
                            :rotation-speed 1.2
                            :then           0
                            :width          100
@@ -72,7 +71,9 @@
   (let [{:keys [rect] :as s} state
         now (* timestamp 0.001)
         delta-time (- now (:then rect))
-        state (assoc-in s [:rect :rotation 1] (+ (get-in rect [:rotation 1]) (* (:rotation-speed rect) delta-time)))]
+        dt (* (:rotation-speed rect) delta-time)
+        state (-> (assoc-in s [:rect :rotation 1] (+ (get-in rect [:rotation 1]) dt))
+                  (assoc-in [:rect :rotation 0] (+ (get-in rect [:rotation 0]) dt)))]
     (-> (assoc-in state [:objects-to-draw :my-f :uniforms :u_matrix :values] (multiply-matrices state))
         webgl/draw-scene!)
     (js/requestAnimationFrame (fn [t] (draw! t (assoc-in state [:rect :then] now))))))
@@ -88,10 +89,10 @@
                               (assoc :objects-to-draw
                                      {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
                                              :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
-                                             :textures   {:f-texture (-> (webgl/create-texture! gl [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])])
-                                                                         (webgl/create-texture-from-img "images/f-texture.png" (fn [texture]
-                                                                                                                                 (-> (swap! state-atom assoc-in [:my-f :textures :f-texture] texture)
-                                                                                                                                     raf-draw!))))}
+                                             :textures   {:f-texture (->> (webgl/create-texture! gl [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])])
+                                                                          (webgl/create-texture-from-img gl "images/f-texture.png" (fn [texture]
+                                                                                                                                     (-> (swap! state-atom assoc-in [:my-f :textures :f-texture] texture)
+                                                                                                                                         raf-draw!))))}
                                              :attributes {:a_position {:name        "a_position"
                                                                        :size        3
                                                                        :type        (.-FLOAT gl)
@@ -109,7 +110,7 @@
                                                                        :stride      0
                                                                        :offset      0
                                                                        :buffer-info (webgl/create-buffer gl
-                                                                                                         {:data   (js/Float32Array. shapes/f-texture-coordinates)
+                                                                                                         {:data   (js/Float32Array. shapes/f-texture-coordinates-selective)
                                                                                                           :usage  (.-STATIC_DRAW gl)
                                                                                                           :target (.-ARRAY-BUFFER gl)})}
                                                           }
@@ -123,6 +124,7 @@
                                              :element    {:draw-type (.-TRIANGLES gl)
                                                           :offset    0
                                                           :count     (* 16 6)}}}))))))
+
 (def ^:export lesson
   {:title           (fn []
                       [:div
@@ -133,7 +135,7 @@
    :source          (c/current-namespace #'state-atom)
    :tutorial-source "webgl-3d-textures.html"
    :start           (fn []
-                      (let [canvas-id "texture-0"
+                      (let [canvas-id "texture-1"
                             state @state-atom
                             {:keys [translation scale rotation]} (:rect state)]
                         [:div {:style {:display        "flex"

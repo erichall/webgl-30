@@ -19,9 +19,11 @@
             [webgl-30.lessons.cameras-1 :as cameras-1]
             [webgl-30.lessons.animations :as animations]
             [webgl-30.lessons.textures-0 :as textures-0]
+            [webgl-30.lessons.textures-1 :as textures-1]
+            [webgl-30.lessons.textures-2 :as textures-2]
             ))
 
-(def initial-state {:active-page-index 17
+(def initial-state {:active-page-index 19
                     :lessons           [
                                         fundamentals-0/lesson
                                         fundamentals-1/lesson
@@ -41,6 +43,8 @@
                                         cameras-1/lesson
                                         animations/lesson
                                         textures-0/lesson
+                                        textures-1/lesson
+                                        textures-2/lesson
                                         ]})
 
 (declare render-component)
@@ -109,11 +113,11 @@
                       :margin-bottom "10px"
                       :margin-top    "10px"}}
        "Clojure implementation of "
-       [:a {:href   tutorial-source
+       [:a {:href   (str "https://webglfundamentals.org/webgl/lessons/" tutorial-source)
             :target "_blank"
             :style  {:color       "rgba(0, 181, 255, 1)"
                      :font-family "monospace"}} tutorial-source]]
-      [:span "Github: " [:a {:href   source
+      [:span "Github: " [:a {:href   (str "https://github.com/erichall/webgl-30/blob/master/src" source)
                              :target "_blank"
                              :style  {:color       "rgba(0, 181, 255, 1)"
                                       :font-family "monospace"}} "[source]"]]

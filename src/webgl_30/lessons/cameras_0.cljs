@@ -1,5 +1,6 @@
 (ns webgl-30.lessons.cameras-0
   (:require [reagent.core :as r]
+            [webgl-30.core :as c]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
             [webgl-30.shapes :as shapes]
@@ -151,8 +152,8 @@
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          "https://github.com/erichall/webgl-30/blob/master/src/webgl_30/lessons/perspective_3d_0.cljs"
-   :tutorial-source "https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html"
+   :source          (c/current-namespace #'state-atom)
+   :tutorial-source "webgl-3d-camera.html"
    :start           (fn []
                       (let [canvas-id "translation"
                             state @state-atom

@@ -62,7 +62,7 @@
 (defn draw!
   [timestamp]
   (let [{:keys [rect gl] :as state} @state-atom]
-    (webgl/prepare-canvas! gl)
+    (webgl/prepare-canvas! gl {})
 
     (let [{:keys [attributes uniforms element program]} (get-in state [:objects-to-draw :my-f])
           {:keys [translation angle-rad scale]} rect
@@ -124,7 +124,7 @@
                         "Lesson - WebGL 2D Matrices"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-2d-matrices.html"
    :start           (fn []
                       (let [canvas-id "translation"]

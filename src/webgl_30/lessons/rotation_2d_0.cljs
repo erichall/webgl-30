@@ -95,7 +95,7 @@
                         "Lesson - WebGL 2D Rotation"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Rotation!"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-2d-rotation.html"
    :start           (fn []
                       (let [canvas-id "translation"]

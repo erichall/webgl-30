@@ -104,7 +104,7 @@
                         "Lesson - WebGL 2D Matrices"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-2d-matrices.html"
    :start           (fn []
                       (let [canvas-id "translation"]

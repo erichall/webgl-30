@@ -21,9 +21,10 @@
             [webgl-30.lessons.textures-0 :as textures-0]
             [webgl-30.lessons.textures-1 :as textures-1]
             [webgl-30.lessons.textures-2 :as textures-2]
+            [webgl-30.lessons.textures-3 :as textures-3]
             ))
 
-(def initial-state {:active-page-index 19
+(def initial-state {:active-page-index 20
                     :lessons           [
                                         fundamentals-0/lesson
                                         fundamentals-1/lesson
@@ -45,6 +46,7 @@
                                         textures-0/lesson
                                         textures-1/lesson
                                         textures-2/lesson
+                                        textures-3/lesson
                                         ]})
 
 (declare render-component)
@@ -117,7 +119,7 @@
             :target "_blank"
             :style  {:color       "rgba(0, 181, 255, 1)"
                      :font-family "monospace"}} tutorial-source]]
-      [:span "Github: " [:a {:href   (str "https://github.com/erichall/webgl-30/blob/master/src" source)
+      [:span "Github: " [:a {:href   (str "https://github.com/erichall/webgl-30/blob/master/src/" source)
                              :target "_blank"
                              :style  {:color       "rgba(0, 181, 255, 1)"
                                       :font-family "monospace"}} "[source]"]]

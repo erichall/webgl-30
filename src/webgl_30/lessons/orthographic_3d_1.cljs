@@ -130,7 +130,7 @@
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Matrix"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-3d-orthographic.html"
    :start           (fn []
                       (let [canvas-id "translation"

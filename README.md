@@ -879,3 +879,15 @@ Continue with textures.
 ##### Conclusion
 It' already day 21?!
 
+### 22/30
+
+##### What the heck did we do yesterday?
+
+##### What did we do today?
+We got to learn about the `generateMipmap` it is used to solve the issue with coloring pixels. The `mipmap` solves this
+by having smaller images, each `1/4` of the previous one. So `generateMipmap` creates all those smaller images for you. 
+
+##### Moving forward?
+
+##### Conclusion
+

@@ -89,10 +89,11 @@
                               (assoc :objects-to-draw
                                      {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
                                              :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
-                                             :textures   {:f-texture (->> (webgl/create-texture! gl [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])])
-                                                                          (webgl/create-texture-from-img gl "images/f-texture.png" (fn [texture]
-                                                                                                                                     (-> (swap! state-atom assoc-in [:my-f :textures :f-texture] texture)
-                                                                                                                                         raf-draw!))))}
+                                             :textures   {:f-texture {:texture (->> (webgl/create-texture! gl [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])])
+                                                                                    (webgl/create-texture-from-img gl "images/f-texture.png" (fn [texture]
+                                                                                                                                               (-> (swap! state-atom assoc-in [:objects-to-draw :my-f :textures :f-texture :texture] texture)
+                                                                                                                                                   raf-draw!))))
+                                                                      :type    (.-TEXTURE_2D gl)}}
                                              :attributes {:a_position {:name        "a_position"
                                                                        :size        3
                                                                        :type        (.-FLOAT gl)
@@ -132,7 +133,7 @@
                         "Lesson - WebGL Textures"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Texture"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-3d-textures.html"
    :start           (fn []
                       (let [canvas-id "texture-1"

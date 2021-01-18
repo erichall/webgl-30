@@ -90,7 +90,7 @@
                         "Lesson - WebGL 2D Translation"]
                        [:h4 {:style {:font-family "monospace"}}
                         "Translating a rect"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-2d-translation.html"
    :start           (fn []
                       (let [canvas-id "translation"]

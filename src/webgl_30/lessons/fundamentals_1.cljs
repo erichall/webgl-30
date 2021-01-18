@@ -70,7 +70,7 @@
                         "Lesson - WebGL Fundamentals"]
                        [:h4 {:style {:font-family "monospace"}}
                         "A box with translated coordinates"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-fundamentals.html"
    :start           (fn []
                       (let [canvas-id "fundamentals"]

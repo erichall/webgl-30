@@ -107,7 +107,7 @@
                         "Lesson - WebGL 2D Scale"]
                        [:h4 {:style {:font-family "monospace"}}
                         "scaling in 2d"]])
-   :source          (c/current-namespace #'state-atom)
+   :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-2d-scale.html"
    :start           (fn []
                       (let [canvas-id "translation"]

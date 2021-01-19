@@ -882,12 +882,30 @@ It' already day 21?!
 ### 22/30
 
 ##### What the heck did we do yesterday?
+Textures..
 
 ##### What did we do today?
 We got to learn about the `generateMipmap` it is used to solve the issue with coloring pixels. The `mipmap` solves this
 by having smaller images, each `1/4` of the previous one. So `generateMipmap` creates all those smaller images for you. 
 
 ##### Moving forward?
+Complete texture?!
 
 ##### Conclusion
+Textures is hard.........??
+
+### 23/30
+
+##### What the heck did we do yesterday?
+Textures..
+
+##### What did we do today?
+Spend the whole evening staring at a black canvas because some how, the texture won't render..
+
+##### Moving forward?
+Complete texture?!
+
+##### Conclusion
+How the heck are you supposed to debug a WebGL application if the only thing you have is a black canvas.
+No errors, no nils no nothing....
 

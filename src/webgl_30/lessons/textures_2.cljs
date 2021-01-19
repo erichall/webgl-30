@@ -135,7 +135,7 @@
 (defn set-texture-param!
   [type val-str]
   (let [{:keys [gl]} @state-atom]
-    (swap! state-atom update-in [:objects-to-draw :my-f :textures :params type] (fn [p] (c/set-last p (aget gl val-str))))))
+    (swap! state-atom update-in [:objects-to-draw :my-f :textures :f-texture :params type] (fn [p] (c/set-last p (aget gl val-str))))))
 
 (def ^:export lesson
   {:title           (fn []

@@ -10,7 +10,13 @@
 
 (defn get-aspect
   [gl]
-  (/ (aget gl "canvas" "clientWidth") (aget gl "canvas" "clientHeight")))
+  {:post [(float? %)]}
+  (let [w (aget gl "canvas" "clientWidth")
+        h (aget gl "canvas" "clientHeight")
+        a (/ w h)]
+    (if (js/isNaN a)
+      1
+      a)))
 
 (defn create-shader
   [gl type source]
@@ -83,10 +89,18 @@
    (clear-canvas! gl false [0 0 0 0]))
   ([gl clear-depth?] (clear-canvas! gl clear-depth? [0 0 0 0]))
   ([gl clear-depth? color]
+
    (apply js-invoke gl "clearColor" (or color [0 0 0 0]))
    (if clear-depth?
      (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
      (.clear gl (.-COLOR_BUFFER_BIT gl)))
+
+   ;(.clearColor gl 0 0 0 0)
+   ;(if clear-depth?
+   ;  (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
+   ;  (.clear gl (.-COLOR_BUFFER_BIT gl)))
+
+
    gl))
 
 (defn bind-buffer
@@ -148,12 +162,19 @@
     gl))
 
 (defn set-uniforms!
-  [gl program uniforms]
-  {:pre  [(some? gl) (some? program)]
-   :post [(= gl %)]}
-  (doseq [uniform uniforms]
-    (set-uniform! gl program uniform))
-  gl)
+  ([gl state]
+   (let [objs (vals (get-in state [:objects-to-draw]))]
+     (doseq [obj objs
+             :let [[uniforms program] ((juxt :uniforms :program) obj)]]
+       (doseq [uniform (vals uniforms)]
+         (set-uniform! gl program uniform))))
+   gl)
+  ([gl program uniforms]
+   {:pre  [(some? gl) (some? program)]
+    :post [(= gl %)]}
+   (doseq [uniform uniforms]
+     (set-uniform! gl program uniform))
+   gl))
 
 (defn get-context
   [canvas-id]
@@ -177,10 +198,9 @@
 
 (defn prepare-canvas!
   [gl {:keys [clear-depth? clear-color width height]}]
-  (->
-    (resize-canvas-to-display-size gl)
-    (set-gl-viewport! width height)
-    (clear-canvas! clear-depth? clear-color))
+  (-> (resize-canvas-to-display-size gl)
+      (set-gl-viewport! width height)
+      (clear-canvas! clear-depth? clear-color))
   gl)
 
 (defn use-program!
@@ -216,7 +236,7 @@
 
 (defn set-textures!
   [gl textures]
-  (doseq [{:keys [params type texture] :as shit} textures]
+  (doseq [{:keys [params type texture]} textures]
     (set-texture-params! gl texture type (vals params)))
   gl)
 
@@ -275,12 +295,16 @@
   ([gl texture-data] (create-texture! gl nil texture-data))
   ([gl texture texture-data]
    (let [texture (if (some? texture) texture (create-a-texture gl))]
+
      (bind-texture! gl (first texture-data) texture)
+     ;; hmm can this be the error?
+     ;; https://stackoverflow.com/questions/63127867/html-2d-canvas-as-texture-on-webgl-canvas
+     ;; from gman
      (apply js-invoke gl "texImage2D" texture-data)
 
      (when-let [img (-> texture-data last img?)]
        (if (and (power-of-two? (aget (last texture-data) "height")) (power-of-two? (aget (last texture-data) "width")))
-         (.generateMipmap gl (first texture-data))
+         (.generateMipmap gl (.-TEXTURE_2D gl))
          (do
            (.texParameteri gl (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_S gl) (.-CLAMP_TO_EDGE gl))
            (.texParameteri gl (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_T gl) (.-CLAMP_TO_EDGE gl))
@@ -299,21 +323,22 @@
 (defn create-texture-from-img
   ([gl img-name on-load] (create-texture-from-img gl img-name on-load nil))
   ([gl img-name on-load texture]
-   (let [img (js/Image.)
-         texture (if (some? texture) texture (create-a-texture gl))]
+   (let [img (js/Image.)]
      (aset img "src" img-name)
+     (aset img "crossOrigin" "Anonymous")
      (.addEventListener img
                         "load"
                         (fn []
-                          (-> (create-texture! gl
-                                               texture
-                                               [(.-TEXTURE_2D gl)
-                                                0
-                                                (.-RGBA gl)
-                                                (.-RGBA gl)
-                                                (.-UNSIGNED_BYTE gl)
-                                                img])
-                              on-load)))
+                          (let [texture (if (some? texture) texture (create-a-texture gl))]
+                            (-> (create-texture! gl
+                                                 texture
+                                                 [(.-TEXTURE_2D gl)
+                                                  0
+                                                  (.-RGBA gl)
+                                                  (.-RGBA gl)
+                                                  (.-UNSIGNED_BYTE gl)
+                                                  img])
+                                on-load))))
      texture)))
 
 (defn create-framebuffer
@@ -334,7 +359,6 @@
 (defn allocate-texture
   [gl texture-type texture & texture-data]
   (bind-texture! gl texture-type texture)
-  (println texture-data)
   (apply js-invoke gl "texImage2D" texture-data)
   gl)
 

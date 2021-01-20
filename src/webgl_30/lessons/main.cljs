@@ -22,31 +22,35 @@
             [webgl-30.lessons.textures-1 :as textures-1]
             [webgl-30.lessons.textures-2 :as textures-2]
             [webgl-30.lessons.textures-3 :as textures-3]
+            [webgl-30.lessons.textures-3-revised :as textures-3-revised]
             ))
 
-(def initial-state {:active-page-index 20
+(def initial-state {:active-page-index
+                                       ;21
+                    1
                     :lessons           [
-                                        fundamentals-0/lesson
-                                        fundamentals-1/lesson
-                                        fundamentals-2/lesson
-                                        translation-2d-0/lesson
-                                        translation-2d-1/lesson
-                                        rotation-2d-0/lesson
-                                        scale-2d/lesson
+                                        ;fundamentals-0/lesson
+                                        ;fundamentals-1/lesson
+                                        ;fundamentals-2/lesson
+                                        ;translation-2d-0/lesson
+                                        ;translation-2d-1/lesson
+                                        ;rotation-2d-0/lesson
+                                        ;scale-2d/lesson
                                         matrices-2d_0/lesson
                                         matrices-2d_1/lesson
-                                        matrices-2d_2/lesson
-                                        orthographic-3d-0/lesson
-                                        orthographic-3d-1/lesson
-                                        perspective-3d-0/lesson
-                                        perspective-3d-1/lesson
-                                        cameras-0/lesson
-                                        cameras-1/lesson
-                                        animations/lesson
-                                        textures-0/lesson
-                                        textures-1/lesson
-                                        textures-2/lesson
-                                        textures-3/lesson
+                                        ;matrices-2d_2/lesson
+                                        ;orthographic-3d-0/lesson
+                                        ;orthographic-3d-1/lesson
+                                        ;perspective-3d-0/lesson
+                                        ;perspective-3d-1/lesson
+                                        ;cameras-0/lesson
+                                        ;cameras-1/lesson
+                                        ;animations/lesson
+                                        ;textures-0/lesson
+                                        ;textures-1/lesson
+                                        ;textures-2/lesson
+                                        ;textures-3/lesson
+                                        ;textures-3-revised/lesson
                                         ]})
 
 (declare render-component)

@@ -157,7 +157,7 @@
    ])
 
 (defn webgl-canvas
-  [{:keys [height width id on-mount]}]
+  [{:keys [height width id on-mount on-unmount] :or {on-unmount (fn [])}}]
   (r/create-class
     {:display-name           "webgl-canvas"
      :reagent-render         (fn [] [:canvas {:width  (str width "px")
@@ -169,7 +169,11 @@
                                (let [gl (-> (str "#" id)
                                             js/document.querySelector
                                             (.getContext "webgl"))]
-                                 (.loseContext (.getExtension gl "WEBGL_lose_context"))))}))
+                                 (.loseContext (.getExtension gl "WEBGL_lose_context"))
+
+                                 (on-unmount)
+
+                                 ))}))
 
 (defn app
   [{:keys [state trigger-event]}]

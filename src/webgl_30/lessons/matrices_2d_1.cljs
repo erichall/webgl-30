@@ -64,13 +64,12 @@
   (let [{:keys [rect gl] :as state} @state-atom]
     (webgl/prepare-canvas! gl {})
 
-    (let [{:keys [attributes uniforms element program]} (get-in state [:objects-to-draw :my-f])
+    (let [{:keys [uniforms element program]} (get-in state [:objects-to-draw :my-f])
           {:keys [translation angle-rad scale]} rect
           translation-matrix (m/translation-2d-matrix translation)
           rotation-matrix (m/rotation-2d-matrix angle-rad)
           scale-matrix (m/scaling-2d-matrix scale)]
       (webgl/use-program! gl program)
-      (webgl/set-attributes! gl program (vals attributes))
 
       (loop [matrix (m/identity-2d-matrix)
              i 0]
@@ -88,34 +87,29 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (assoc state :objects-to-draw
-                                       {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                               :attributes {:a_position {:name        "a_position"
-                                                                         :size        2
-                                                                         :type        (.-FLOAT gl)
-                                                                         :normalize   false
-                                                                         :stride      0
-                                                                         :offset      0
-                                                                         :buffer-info (webgl/create-buffer gl
-                                                                                                           {:data   (js/Float32Array. shapes/f-shape-2d)
-                                                                                                            :usage  (.-STATIC_DRAW gl)
-                                                                                                            :target (.-ARRAY-BUFFER gl)})}}
-                                               :uniforms   {:u_resolution {:name   "u_resolution"
-                                                                           :type   "uniform2f"
-                                                                           :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                            :u_color      {:name   "u_color"
-                                                                           :type   "uniform4fv"
-                                                                           :values (:color rect)}
-                                                            :u_matrix     {:name      "u_matrix"
-                                                                           :type      "uniformMatrix3fv"
-                                                                           :transpose false
-                                                                           :values    (multiply-matrices @state-atom)
-                                                                           }
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (assoc state :objects-to-draw
+                                         {:my-f {:program    program
+                                                 :attributes {:a_position (webgl/attribute gl program {:name      "a_position"
+                                                                                                       :size      2
+                                                                                                       :type      (.-FLOAT gl)
+                                                                                                       :data      (js/Float32Array. shapes/f-shape-2d)})}
+                                                 :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                             :type   "uniform2f"
+                                                                             :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                              :u_color      {:name   "u_color"
+                                                                             :type   "uniform4fv"
+                                                                             :values (:color rect)}
+                                                              :u_matrix     {:name      "u_matrix"
+                                                                             :type      "uniformMatrix3fv"
+                                                                             :transpose false
+                                                                             :values    (multiply-matrices @state-atom)
+                                                                             }
 
-                                                            }
-                                               :element    {:draw-type (.-TRIANGLES gl)
-                                                            :offset    0
-                                                            :count     18}}})))))
+                                                              }
+                                                 :element    {:draw-type (.-TRIANGLES gl)
+                                                              :offset    0
+                                                              :count     18}}}))))))
 
 (def ^:export lesson
   {:title           (fn []

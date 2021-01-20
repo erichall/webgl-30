@@ -909,3 +909,115 @@ Complete texture?!
 How the heck are you supposed to debug a WebGL application if the only thing you have is a black canvas.
 No errors, no nils no nothing....
 
+### 24/30
+
+##### What the heck did we do yesterday?
+We got struck by that we have no clue of what we are doing so had to read up on WebGL.
+
+##### What did we do today?
+
+We did find an awesome book on the topic; `WebGL Programming Guide Interactive 3D Graphics Programming with WebGL by Kouichi Matsuda, Rodger Lea`
+it seems to be pure gold so far, it's an enormous complement to the tutorials, and they explain much more in depth of stuff. 
+
+Gone through some summary ::
+
+::: ABSTRACTIONS :::
+
+To draw stuff, WebGL needs shaders; written in OpenGL ES Shading Language - GLSL ES ~ C lang
+        vertex shader   - describe traits of a vertex (a point in 2d/3d space, position, color)
+        fragment shader - deals with the stuff between each vertex on a 'pixel' level.
+        
+`gl.drawArrays` executes the vertex shader to draw a specific shape defined by the mode arg (POINTS, LINES, TRIANGLES..)
+second argument is which vertex to start drawing from, I guess the first vertex is at (0,0)? The last argument is count and
+tells WebGL how many vertices to use in this drawing.
+
+Coordinates ;;
+    origin at (0,0,0) is at center of the canvas. (-1,0,0) is mid-left side, (1,0,0) is mid-right side, same for y and z. 
+    convert canvas-space -> clip-space 
+        x = ((x - canvas.left) - canvas.width / 2)  / (canvas.width / 2)
+        y = (canvas.height / 2 - (y - canvas.top)) / (canvas.height / 2)
+    
+Pass data to vertex shader ;;
+    Can only be done through attribute variables and uniform variables.
+        Attribute - pass data that are different for each vertex.
+        Uniform   - pass data that are same for each vertex.
+        
+A program ;;
+    Object that holds the vertex and fragment shader.
+    
+Buffers ;;
+    WebGL way to provide a memory area allocated inside WebGL that holds each vertex you want to draw.
+    Basically with a buffer, you can pass multiple objects to a vertex shader through an attribute variable.
+    
+    Steps ->
+        1) Create a buffer, `gl.createBuffer`
+                Like allocating a memory area.
+        2) Bind that buffer to a target `gl.bindBuffer` 
+                Like pointing that memory area to something
+        3) Write data to the buffer through `gl.bufferData`
+                To actually write data to that memory area
+        4) Assign the buffer object to an attribute variable `gl.vertexAttributePointer`
+                To pass the data to the vertex shader
+        5) Enable the assignment from 4) `gl.enableVertexAttribArray`
+                To approve/enable the data
+                
+Texture ;;
+    'Paste a fancy img on a geometric object.'
+    
+    Mapping a texture in 4 steps - 
+        1) Prepare the img to be mapped on a geo shape.
+        2) Specify the img mapping method for the geo shape.
+        3) Load the texture img and configure it for WebGL usage.
+        4) Extract the texels (texture pixel) from the img in the fragment shader and set the corresponding fragment.
+    
+   
+   Texture coordinates
+        These are 2d in WebGL and uses s,t instead of x,y
+        The top right corner will always be at position (1,1) and bottom-left corner will be at (0,0)
+        
+   To paste the texture on a object, we need to take the texture-cooridnate system and map that to the WebGL coordinate system.
+   
+   Part 1) is done in the vertex shader, 
+   ```
+        attribute vec2 a_texcoord;
+        varying vec2 v_texcoord;
+            
+        void main() {
+           v_texcoord = a_texcoord;
+         }
+   ```
+
+   Part 2) is done in the fragment shadedr
+   ```
+   varying vec2 v_texcoord;
+
+   uniform sampler2D u_texture; // texture
+
+   void main() {
+       gl_FragColor = texture2D(u_texture, v_texcoord);
+   }
+   ```
+   Part 3) (initialize vertex buffer) is done the same way as with an attribute, you pass vertex coordinate, and the mapping to WebGL space in a array to a buffer.
+   then you call the same jazz, `gl.getAttribLocation(program, a_texcoord)` -> `gl.vertexAttribPointer(a_texcoord,..)` -> `gl.enableVertexAttribArray(a_texcoord)`
+   
+   Part 4) (initialize textures) First create a texture with `gl.createTexture()` then get the sampler from the fragment shader `gl.getUniformLocation(program, 'u_sampler')`
+   `createTexture` seems to be the same as creating a buffer, you create a memory allocation area. After this, we can async load the texture img and then call 
+   load textures with the variables (sampler variable ,the new texture created, and the img).
+   
+   Part 5) (load textures)
+        Texture unit is WebGL way to support multiple textures, if you have one texture I guess it's enough to call `gl.activeTexture(gl.TEXTURE0)`
+        We then bind the texture with `gl.bindTexture(gl.TEXTURE_2D, texture)` this does two things; enabling the texture and binding it to the texture unit.
+        (I think you bind stuff in WebGL because you can't operate on the object directly but only through the binding.)
+        Next, we specify how the texture img will be processed -> `gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)`
+        Next, assign the img to a texture object with `gl.texImage2D(target, level, internalformat, format, type, image)`
+        where `target -> TEXTURE_2D`, `level -> MIPMAP imgs`, `internalformat -> RGB and such`, `format -> same as internalformat`, `type -> gl.UNSIGNED_BYTE etc` and `img -> img object`
+        after calling `texImage2D` the img is actually inside the WebGL system but not yet inside the fragment shader, 
+        to pass it; `gl.uniform1i(u_sampler, 0);` where `0` is the thing you bound with `gl.TEXTURE0`. The final thing to do
+        is inside the fragment shader through: `gl_FragColor = texture2D(u_Sampler, v_TexCoord)`.
+
+##### Moving forward?
+We are going to get this texture visible!
+
+##### Conclusion
+The story continues. The found book above is excellent.
+

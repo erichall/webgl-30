@@ -132,12 +132,14 @@
 (defn set-attribute!
   [gl program {:keys [name size type normalize stride offset buffer-info]}]
   (let [location (.getAttribLocation gl program name)]
-    ;; Turn the variable on inside our GLSL VS program above.
-    (.enableVertexAttribArray gl location)
 
     (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
+
     ;; Describe how to take the data from our buffer and give it to our shader.
     (.vertexAttribPointer gl location size type normalize stride offset)
+
+    ;; Turn the variable on inside our GLSL VS program above.
+    (.enableVertexAttribArray gl location)
     gl))
 
 (defn set-attributes!
@@ -253,7 +255,7 @@
         (set-textures! (vals textures))
         (enable-features! features)
         (set-uniforms! program (vals uniforms))
-        (set-attributes! program (vals attributes))
+        ;(set-attributes! program (vals attributes))
         (draw-arrays! element)))
   gl)
 
@@ -325,7 +327,6 @@
   ([gl img-name on-load texture]
    (let [img (js/Image.)]
      (aset img "src" img-name)
-     (aset img "crossOrigin" "Anonymous")
      (.addEventListener img
                         "load"
                         (fn []
@@ -340,6 +341,12 @@
                                                   img])
                                 on-load))))
      texture)))
+
+(defn initialize-texture
+  [img-name on-load]
+  (let [img (js/Image.)]
+    (aset img "src" img-name)
+    (.addEventListener img "load" (fn [] (on-load img)))))
 
 (defn create-framebuffer
   [gl]
@@ -361,6 +368,34 @@
   (bind-texture! gl texture-type texture)
   (apply js-invoke gl "texImage2D" texture-data)
   gl)
+
+(defn- gl-invoke
+  [gl fn args]
+  (apply js-invoke gl fn args)
+  gl)
+
+(defn vertex-attrib-pointer
+  [gl & args]
+  (gl-invoke gl "vertexAttribPointer" args))
+
+(defn enable-vertex-attrib-array
+  [gl & args]
+  (gl-invoke gl "enableVertexAttribArray" args))
+
+(defn attribute
+  [gl program {:keys [name size type normalize stride offset data usage] :as attribute}]
+  (let [buffer (.createBuffer gl)
+        location (.getAttribLocation gl program name)]
+    (-> (bind-buffer gl buffer (.-ARRAY-BUFFER gl))
+        (buffer-data {:target   (.-ARRAY-BUFFER gl)
+                      :src-data data
+                      :usage    (or usage (.-STATIC_DRAW gl))})
+        (vertex-attrib-pointer location size type (or normalize false) (or stride 0) (or offset 0))
+        (enable-vertex-attrib-array location))
+
+    (-> (assoc attribute :buffer buffer)
+        (assoc :location location))
+    ))
 
 
 

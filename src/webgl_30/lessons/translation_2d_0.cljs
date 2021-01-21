@@ -46,7 +46,7 @@
   (let [{:keys [gl rect] :as state} @state-atom]
 
     (webgl/draw-scene! state)
-    (let [{:keys [target usage]} (get-in state [:objects-to-draw :thing :attributes :a_position :buffer-info])]
+    (let [{:keys [target usage] :as s} (get-in state [:objects-to-draw :thing :attributes :a_position])]
       (webgl/buffer-data gl {:target   target
                              :src-data (-> (webgl/get-rectangle {:x      (:x rect)
                                                                  :y      (:y rect)
@@ -58,30 +58,24 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (assoc state :objects-to-draw
-                                       {:thing {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                                :attributes {:a_position {:name        "a_position"
-                                                                          :size        2
-                                                                          :type        (.-FLOAT gl)
-                                                                          :normalize   false
-                                                                          :stride      0
-                                                                          :offset      0
-                                                                          :buffer-info (webgl/create-buffer gl
-                                                                                                            {:data   (js/Float32Array. (webgl/get-rectangle {:x      (:x rect)
-                                                                                                                                                             :y      (:y rect)
-                                                                                                                                                             :width  (:width rect)
-                                                                                                                                                             :height (:height rect)}))
-                                                                                                             :usage  (.-STATIC_DRAW gl)
-                                                                                                             :target (.-ARRAY-BUFFER gl)})}}
-                                                :uniforms   {:u_resolution {:name   "u_resolution"
-                                                                            :type   "uniform2f"
-                                                                            :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                             :u_color      {:name   "u_color"
-                                                                            :type   "uniform4f"
-                                                                            :values (:color rect)}}
-                                                :element    {:draw-type (.-TRIANGLES gl)
-                                                             :offset    0
-                                                             :count     6}}})))))
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (assoc state :objects-to-draw
+                                         {:thing {:program    program
+                                                  :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                        :size 2
+                                                                                                        :data (js/Float32Array. (webgl/get-rectangle {:x      (:x rect)
+                                                                                                                                                      :y      (:y rect)
+                                                                                                                                                      :width  (:width rect)
+                                                                                                                                                      :height (:height rect)}))})}
+                                                  :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                              :type   "uniform2f"
+                                                                              :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                               :u_color      {:name   "u_color"
+                                                                              :type   "uniform4f"
+                                                                              :values (:color rect)}}
+                                                  :element    {:draw-type (.-TRIANGLES gl)
+                                                               :offset    0
+                                                               :count     6}}}))))))
 
 (def ^:export lesson
   {:title           (fn []

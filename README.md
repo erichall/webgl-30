@@ -987,7 +987,7 @@ Texture ;;
          }
    ```
 
-   Part 2) is done in the fragment shadedr
+   Part 2) is done in the fragment shader
    ```
    varying vec2 v_texcoord;
 

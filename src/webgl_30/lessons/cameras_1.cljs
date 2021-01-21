@@ -62,10 +62,6 @@
         (m/matrix-multiply-3d rotation-matrix-z)
         (m/matrix-multiply-3d scale-matrix))))
 
-(defn format
-  [f & xs]
-  (apply cljs.pprint/cl-format nil f xs))
-
 (defn draw!
   [timestamp]
   (let [{:keys [gl rect clear-depth?] :as state} @state-atom
@@ -84,13 +80,11 @@
         look-at-matrix (m/look-at-matrix camera-position f-position up)
         view-matrix (m/invert-4x4 look-at-matrix)
         view-projection-matrix (m/matrix-multiply-3d projection-matrix view-matrix)
-        {:keys [program features attributes uniforms element]} (get-in state [:objects-to-draw :my-f])]
+        {:keys [program attributes features uniforms element]} (get-in state [:objects-to-draw :my-f])]
 
     (-> (webgl/prepare-canvas! gl clear-depth?)
         (webgl/use-program! program)
-        (webgl/enable-features! features)
-        (webgl/set-attributes! program (vals attributes)))
-
+        (webgl/enable-features! features))
 
     (doseq [ii (range n-fs)
             :let [angle (/ (* ii Math/PI 2) n-fs)
@@ -108,54 +102,43 @@
 
 (defn setup!
   []
-  (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (->
-                            (assoc state :clear-depth? true)
-                            (assoc :objects-to-draw
-                                   {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                           :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
-                                           :attributes {:a_position {:name        "a_position"
-                                                                     :size        3
-                                                                     :type        (.-FLOAT gl)
-                                                                     :normalize   false
-                                                                     :stride      0
-                                                                     :offset      0
-                                                                     :buffer-info (webgl/create-buffer gl
-                                                                                                       {:data   (js/Float32Array. shapes/f-shape-3d)
-                                                                                                        :usage  (.-STATIC_DRAW gl)
-                                                                                                        :target (.-ARRAY-BUFFER gl)})}
-                                                        :a_color    {:name        "a_color"
-                                                                     :size        3
-                                                                     :type        (.-UNSIGNED_BYTE gl)
-                                                                     :normalize   true
-                                                                     :stride      0
-                                                                     :offset      0
-                                                                     :buffer-info (webgl/create-buffer gl
-                                                                                                       {:data   (js/Uint8Array. shapes/f-shape-3d-color)
-                                                                                                        :usage  (.-STATIC_DRAW gl)
-                                                                                                        :target (.-ARRAY-BUFFER gl)})}}
-                                           :uniforms   {:u_resolution  {:name   "u_resolution"
-                                                                        :type   "uniform2f"
-                                                                        :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                        :u_matrix      {:name      "u_matrix"
-                                                                        :type      "uniformMatrix4fv"
-                                                                        :transpose false
-                                                                        :values    (multiply-matrices state)}
-                                                        :u_fudgeFactor {:name   "u_fudgeFactor"
-                                                                        :type   "uniform1f"
-                                                                        :values [1]}
-                                                        }
-                                           :element    {:draw-type (.-TRIANGLES gl)
-                                                        :offset    0
-                                                        :count     (* 16 6)}}}))))))
+  (swap! state-atom (fn [{:keys [gl] :as state}]
+                      (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                        (->
+                          (assoc state :clear-depth? true)
+                          (assoc :objects-to-draw {:my-f {:program    program
+                                                          :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
+                                                          :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                                :size 3
+                                                                                                                :type (.-FLOAT gl)
+                                                                                                                :data (js/Float32Array. shapes/f-shape-3d)})
+                                                                       :a_color    (webgl/attribute gl program {:name      "a_color"
+                                                                                                                :size      3
+                                                                                                                :type      (.-UNSIGNED_BYTE gl)
+                                                                                                                :normalize true
+                                                                                                                :data      (js/Uint8Array. shapes/f-shape-3d-color)})}
+                                                          :uniforms   {:u_resolution  {:name   "u_resolution"
+                                                                                       :type   "uniform2f"
+                                                                                       :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                                       :u_matrix      {:name      "u_matrix"
+                                                                                       :type      "uniformMatrix4fv"
+                                                                                       :transpose false
+                                                                                       :values    (multiply-matrices state)}
+                                                                       :u_fudgeFactor {:name   "u_fudgeFactor"
+                                                                                       :type   "uniform1f"
+                                                                                       :values [1]}}
+                                                          :element    {:draw-type (.-TRIANGLES gl)
+                                                                       :offset    0
+                                                                       :count     (* 16 6)}}}))))))
+
 
 (def ^:export lesson
   {:title           (fn []
                       [:div
                        [:h1 {:style {:font-family "monospace"}}
-                        "Lesson - Orthographic 3D"]
+                        "Lesson - Cameras"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Matrix"]])
+                        "Camera"]])
    :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-3d-camera.html"
    :start           (fn []

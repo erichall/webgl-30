@@ -77,60 +77,47 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl] :as state}]
-                          (-> (assoc state :clear-depth? true)
-                              (assoc :objects-to-draw
-                                     {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                             :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
-                                             ;; first create a blue placeholder texture, then load the img async
-                                             :textures   {:f-texture {:texture (->> [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])]
-                                                                                    (webgl/create-texture! gl)
-                                                                                    (webgl/create-texture-from-img gl "images/f-texture.png" (fn [texture]
-                                                                                                                                               (-> (swap! state-atom assoc-in [:objects-to-draw :my-f :textures :f-texture :texture] texture)
-                                                                                                                                                   raf-draw!))))
-                                                                      :type    (.-TEXTURE_2D gl)
-                                                                      :params  {:min-filter ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_MIN_FILTER gl) (.-NEAREST gl)]
-                                                                                :wrap-s     ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_S gl) (aget gl "CLAMP_TO_EDGE")]
-                                                                                :wrap-t     ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_T gl) (aget gl "REPEAT")]}}}
-                                             :attributes {:a_position {:name        "a_position"
-                                                                       :size        3
-                                                                       :type        (.-FLOAT gl)
-                                                                       :normalize   false
-                                                                       :stride      0
-                                                                       :offset      0
-                                                                       :buffer-info (webgl/create-buffer gl
-                                                                                                         {:data   (js/Float32Array. [-0.5, 0.5, 0.5,
-                                                                                                                                     0.5, 0.5, 0.5,
-                                                                                                                                     -0.5, -0.5, 0.5,
-                                                                                                                                     -0.5, -0.5, 0.5,
-                                                                                                                                     0.5, 0.5, 0.5,
-                                                                                                                                     0.5, -0.5, 0.5,])
-                                                                                                          :usage  (.-STATIC_DRAW gl)
-                                                                                                          :target (.-ARRAY-BUFFER gl)})}
-                                                          :a_texcoord {:name        "a_texcoord"
-                                                                       :size        2
-                                                                       :type        (.-FLOAT gl)
-                                                                       :normalize   false
-                                                                       :stride      0
-                                                                       :offset      0
-                                                                       :buffer-info (webgl/create-buffer gl
-                                                                                                         {:data   (js/Float32Array. [-3, -1,
-                                                                                                                                     2, -1,
-                                                                                                                                     -3, 4,
-                                                                                                                                     -3, 4,
-                                                                                                                                     2, -1,
-                                                                                                                                     2, 4,])
-                                                                                                          :usage  (.-STATIC_DRAW gl)
-                                                                                                          :target (.-ARRAY-BUFFER gl)})}}
-                                             :uniforms   {:u_matrix  {:name      "u_matrix"
-                                                                      :type      "uniformMatrix4fv"
-                                                                      :transpose false
-                                                                      :values    (multiply-matrices state)}
-                                                          :u_texture {:name   "u_texture"
-                                                                      :type   "uniform1i"
-                                                                      :values [0]}}
-                                             :element    {:draw-type (.-TRIANGLES gl)
-                                                          :offset    0
-                                                          :count     (* 1 6)}}}))))))
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (-> (assoc state :clear-depth? true)
+                                (assoc :objects-to-draw
+                                       {:my-f {:program    program
+                                               :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
+                                               ;; first create a blue placeholder texture, then load the img async
+                                               :textures   {:f-texture {:texture (->> [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])]
+                                                                                      (webgl/create-texture! gl)
+                                                                                      (webgl/create-texture-from-img gl "images/f-texture.png" (fn [texture]
+                                                                                                                                                 (-> (swap! state-atom assoc-in [:objects-to-draw :my-f :textures :f-texture :texture] texture)
+                                                                                                                                                     raf-draw!))))
+                                                                        :type    (.-TEXTURE_2D gl)
+                                                                        :params  {:min-filter ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_MIN_FILTER gl) (.-NEAREST gl)]
+                                                                                  :wrap-s     ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_S gl) (aget gl "CLAMP_TO_EDGE")]
+                                                                                  :wrap-t     ["texParameteri" (.-TEXTURE_2D gl) (.-TEXTURE_WRAP_T gl) (aget gl "REPEAT")]}}}
+                                               :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                     :size 3
+                                                                                                     :data (js/Float32Array. [-0.5, 0.5, 0.5,
+                                                                                                                              0.5, 0.5, 0.5,
+                                                                                                                              -0.5, -0.5, 0.5,
+                                                                                                                              -0.5, -0.5, 0.5,
+                                                                                                                              0.5, 0.5, 0.5,
+                                                                                                                              0.5, -0.5, 0.5])})
+                                                            :a_texcoord (webgl/attribute gl program {:name "a_texcoord"
+                                                                                                     :size 2
+                                                                                                     :data (js/Float32Array. [-3, -1,
+                                                                                                                              2, -1,
+                                                                                                                              -3, 4,
+                                                                                                                              -3, 4,
+                                                                                                                              2, -1,
+                                                                                                                              2, 4])})}
+                                               :uniforms   {:u_matrix  {:name      "u_matrix"
+                                                                        :type      "uniformMatrix4fv"
+                                                                        :transpose false
+                                                                        :values    (multiply-matrices state)}
+                                                            :u_texture {:name   "u_texture"
+                                                                        :type   "uniform1i"
+                                                                        :values [0]}}
+                                               :element    {:draw-type (.-TRIANGLES gl)
+                                                            :offset    0
+                                                            :count     (* 1 6)}}})))))))
 
 (defn set-texture-param!
   [type val-str]

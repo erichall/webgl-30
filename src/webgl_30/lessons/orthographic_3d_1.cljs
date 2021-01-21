@@ -87,41 +87,30 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (->
-                            (assoc state :clear-depth? true)
-                            (assoc :objects-to-draw
-                                   {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                           :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
-                                           :attributes {:a_position {:name        "a_position"
-                                                                     :size        3
-                                                                     :type        (.-FLOAT gl)
-                                                                     :normalize   false
-                                                                     :stride      0
-                                                                     :offset      0
-                                                                     :buffer-info (webgl/create-buffer gl
-                                                                                                       {:data   (js/Float32Array. shapes/f-shape-3d)
-                                                                                                        :usage  (.-STATIC_DRAW gl)
-                                                                                                        :target (.-ARRAY-BUFFER gl)})}
-                                                        :a_color    {:name        "a_color"
-                                                                     :size        3
-                                                                     :type        (.-UNSIGNED_BYTE gl)
-                                                                     :normalize   true
-                                                                     :stride      0
-                                                                     :offset      0
-                                                                     :buffer-info (webgl/create-buffer gl
-                                                                                                       {:data   (js/Uint8Array. shapes/f-shape-3d-color)
-                                                                                                        :usage  (.-STATIC_DRAW gl)
-                                                                                                        :target (.-ARRAY-BUFFER gl)})}}
-                                           :uniforms   {:u_resolution {:name   "u_resolution"
-                                                                       :type   "uniform2f"
-                                                                       :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                        :u_matrix     {:name      "u_matrix"
-                                                                       :type      "uniformMatrix4fv"
-                                                                       :transpose false
-                                                                       :values    (multiply-matrices state)}}
-                                           :element    {:draw-type (.-TRIANGLES gl)
-                                                        :offset    0
-                                                        :count     (* 16 6)}}}))))))
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (->
+                              (assoc state :clear-depth? true)
+                              (assoc :objects-to-draw
+                                     {:my-f {:program    program
+                                             :features   [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
+                                             :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                   :size 3
+                                                                                                   :data (js/Float32Array. shapes/f-shape-3d)})
+                                                          :a_color    (webgl/attribute gl program {:name      "a_color"
+                                                                                                   :size      3
+                                                                                                   :type      (.-UNSIGNED_BYTE gl)
+                                                                                                   :normalize true
+                                                                                                   :data      (js/Uint8Array. shapes/f-shape-3d-color)})}
+                                             :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                         :type   "uniform2f"
+                                                                         :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                          :u_matrix     {:name      "u_matrix"
+                                                                         :type      "uniformMatrix4fv"
+                                                                         :transpose false
+                                                                         :values    (multiply-matrices state)}}
+                                             :element    {:draw-type (.-TRIANGLES gl)
+                                                          :offset    0
+                                                          :count     (* 16 6)}}})))))))
 
 (def ^:export lesson
   {:title           (fn []
@@ -129,7 +118,7 @@
                        [:h1 {:style {:font-family "monospace"}}
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Matrix"]])
+                        "Matrix.....?"]])
    :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-3d-orthographic.html"
    :start           (fn []

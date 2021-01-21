@@ -7,11 +7,9 @@
             [webgl-30.component :refer [webgl-canvas slider]]))
 
 (def initial-state {:gl   nil
-                    :rect {:translation [140 150 0]
-                           :rotation    [0 1 1]
+                    :rect {:translation [45 150 0]
+                           :rotation    [(m/deg->rad 40) (m/deg->rad 25) (m/deg->rad 325)]
                            :scale       [1 1 1]
-                           :width       100
-                           :height      30
                            :color       [0.3 0.3 0.3 1]}})
 (defonce state-atom (r/atom nil))
 (when (nil? @state-atom)
@@ -57,7 +55,7 @@
 
 (defn draw!
   [timestamp]
-  (let [{:keys [rect] :as state} @state-atom]
+  (let [state @state-atom]
     (-> (assoc-in state [:objects-to-draw :my-f :uniforms :u_matrix :values] (multiply-matrices state))
         webgl/draw-scene!)))
 
@@ -80,31 +78,25 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (assoc state :objects-to-draw
-                                       {:my-f {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                               :attributes {:a_position {:name        "a_position"
-                                                                         :size        3
-                                                                         :type        (.-FLOAT gl)
-                                                                         :normalize   false
-                                                                         :stride      0
-                                                                         :offset      0
-                                                                         :buffer-info (webgl/create-buffer gl
-                                                                                                           {:data   (js/Float32Array. shapes/f-shape-3d)
-                                                                                                            :usage  (.-STATIC_DRAW gl)
-                                                                                                            :target (.-ARRAY-BUFFER gl)})}}
-                                               :uniforms   {:u_resolution {:name   "u_resolution"
-                                                                           :type   "uniform2f"
-                                                                           :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                            :u_color      {:name   "u_color"
-                                                                           :type   "uniform4fv"
-                                                                           :values (:color rect)}
-                                                            :u_matrix     {:name      "u_matrix"
-                                                                           :type      "uniformMatrix4fv"
-                                                                           :transpose false
-                                                                           :values    (multiply-matrices state)}}
-                                               :element    {:draw-type (.-TRIANGLES gl)
-                                                            :offset    0
-                                                            :count     18}}})))))
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (assoc state :objects-to-draw
+                                         {:my-f {:program    program
+                                                 :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                       :size 3
+                                                                                                       :data (js/Float32Array. shapes/f-shape-3d)})}
+                                                 :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                             :type   "uniform2f"
+                                                                             :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                              :u_color      {:name   "u_color"
+                                                                             :type   "uniform4fv"
+                                                                             :values (:color rect)}
+                                                              :u_matrix     {:name      "u_matrix"
+                                                                             :type      "uniformMatrix4fv"
+                                                                             :transpose false
+                                                                             :values    (multiply-matrices state)}}
+                                                 :element    {:draw-type (.-TRIANGLES gl)
+                                                              :offset    0
+                                                              :count     18}}}))))))
 
 (def ^:export lesson
   {:title           (fn []
@@ -112,7 +104,7 @@
                        [:h1 {:style {:font-family "monospace"}}
                         "Lesson - Orthographic 3D"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "Matrix"]])
+                        "Ortho what?!"]])
    :source          (c/get-filename #'state-atom)
    :tutorial-source "webgl-3d-orthographic.html"
    :start           (fn []

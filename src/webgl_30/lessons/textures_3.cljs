@@ -52,8 +52,9 @@
   (when (:allocate-FB-texture state)
     (swap! state-atom (fn [state] (-> (assoc state :allocate-FB-texture false))))
 
-    (let [t (get-in state [:objects-to-draw :my-f :textures :fb-texture])]
-      (webgl/allocate-texture gl (.-TEXTURE_2D gl) (:texture t) (.-TEXTURE_2D gl) 0 (.-RGBA gl) viewport-width viewport-height 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) nil)))
+    ;(let [t (get-in state [:objects-to-draw :my-f :textures :fb-texture])]
+    ;  (webgl/allocate-texture gl (.-TEXTURE_2D gl) (:texture t) (.-TEXTURE_2D gl) 0 (.-RGBA gl) viewport-width viewport-height 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) nil)))
+    )
 
   (webgl/bind-framebuffer! gl (get-in state [:objects-to-draw :my-f :framebuffers :fb :framebuffer]))
 
@@ -128,6 +129,7 @@
                                 framebuffer (webgl/create-framebuffer gl)
                                 _ (-> (webgl/set-texture-params! gl fb-texture (.-TEXTURE_2D gl) (vals fb-texture-params))
                                       (webgl/attach-texture-to-framebuffer framebuffer (.-FRAMEBUFFER gl) (.-COLOR_ATTACHMENT0 gl) (.-TEXTURE_2D gl) fb-texture 0))
+                                program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
                                 ]
                             (-> (assoc state :clear-depth? true)
                                 (assoc :clear-color [0 0 0 1])
@@ -145,7 +147,7 @@
                                                   {:x 1 :y 1 :z 0 :filter (.-LINEAR_MIPMAP_NEAREST gl)}
                                                   ])
                                 (assoc :objects-to-draw
-                                       {:my-f {:program      (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
+                                       {:my-f {:program      program
                                                :features     [(.-CULL_FACE gl) (.-DEPTH_TEST gl)]
                                                ;; first create a blue placeholder texture, then load the img async
                                                :textures     {:fb-texture {:texture fb-texture
@@ -155,8 +157,7 @@
                                                                                       [(.-TEXTURE_2D gl) 0 (.-RGBA gl) 1 1 0 (.-RGBA gl) (.-UNSIGNED_BYTE gl) (js/Uint8Array. [0 0 255 255])]
                                                                                       (webgl/create-texture! gl)
                                                                                       (webgl/create-texture-from-img gl
-                                                                                                                     ;"images/mip-low-res-example.png"
-                                                                                                                     "https://webglfundamentals.org/webgl/resources/mip-low-res-example.png"
+                                                                                                                     "images/mip-low-res-example.png"
                                                                                                                      (fn [texture]
                                                                                                                        (swap! state-atom (fn [state] (-> (assoc state :allocate-FB-texture true)
                                                                                                                                                          (assoc-in [:objects-to-draw :my-f :textures :f-texture :texture] texture))))
@@ -164,36 +165,22 @@
                                                                                                                        )))
                                                                            :type    (.-TEXTURE_2D gl)}}
                                                :framebuffers {:fb {:framebuffer framebuffer}}
-                                               :attributes   {:a_position {:name        "a_position"
-                                                                           :size        3
-                                                                           :type        (.-FLOAT gl)
-                                                                           :normalize   false
-                                                                           :stride      0
-                                                                           :offset      0
-                                                                           :buffer-info (webgl/create-buffer gl
-                                                                                                             {:data   (js/Float32Array. [-0.5, 0.5, 0.5,
-                                                                                                                                         0.5, 0.5, 0.5,
-                                                                                                                                         -0.5, -0.5, 0.5,
-                                                                                                                                         -0.5, -0.5, 0.5,
-                                                                                                                                         0.5, 0.5, 0.5,
-                                                                                                                                         0.5, -0.5, 0.5,])
-                                                                                                              :usage  (.-STATIC_DRAW gl)
-                                                                                                              :target (.-ARRAY-BUFFER gl)})}
-                                                              :a_texcoord {:name        "a_texcoord"
-                                                                           :size        2
-                                                                           :type        (.-FLOAT gl)
-                                                                           :normalize   false
-                                                                           :stride      0
-                                                                           :offset      0
-                                                                           :buffer-info (webgl/create-buffer gl
-                                                                                                             {:data   (js/Float32Array. [0, 0,
-                                                                                                                                         1, 0,
-                                                                                                                                         0, 1,
-                                                                                                                                         0, 1,
-                                                                                                                                         1, 0,
-                                                                                                                                         1, 1])
-                                                                                                              :usage  (.-STATIC_DRAW gl)
-                                                                                                              :target (.-ARRAY-BUFFER gl)})}}
+                                               :attributes   {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                       :size 3
+                                                                                                       :data (js/Float32Array. [-0.5, 0.5, 0.5,
+                                                                                                                                0.5, 0.5, 0.5,
+                                                                                                                                -0.5, -0.5, 0.5,
+                                                                                                                                -0.5, -0.5, 0.5,
+                                                                                                                                0.5, 0.5, 0.5,
+                                                                                                                                0.5, -0.5, 0.5])})
+                                                              :a_texcoord (webgl/attribute gl program {:name "a_texcoord"
+                                                                                                       :size 2
+                                                                                                       :data (js/Float32Array. [-3, -1,
+                                                                                                                                2, -1,
+                                                                                                                                -3, 4,
+                                                                                                                                -3, 4,
+                                                                                                                                2, -1,
+                                                                                                                                2, 4])})}
                                                :uniforms     {:u_matrix  {:name      "u_matrix"
                                                                           :type      "uniformMatrix4fv"
                                                                           :transpose false

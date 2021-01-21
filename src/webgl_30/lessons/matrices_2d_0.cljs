@@ -74,8 +74,7 @@
                                                  :attributes {:a_position (webgl/attribute gl program {:name "a_position"
                                                                                                        :size 2
                                                                                                        :type (.-FLOAT gl)
-                                                                                                       :data (js/Float32Array. shapes/f-shape-2d)})
-                                                              }
+                                                                                                       :data (js/Float32Array. shapes/f-shape-2d)})}
                                                  :uniforms   {:u_resolution {:name   "u_resolution"
                                                                              :type   "uniform2f"
                                                                              :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}

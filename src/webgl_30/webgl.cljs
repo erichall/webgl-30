@@ -72,6 +72,8 @@
   [gl]
   (aget gl "canvas" "width"))
 
+
+
 (defn set-gl-viewport!
   ([gl]
    (let [width (get-canvas-width gl)
@@ -80,27 +82,18 @@
      gl))
   ([gl width height]
    (if (and (some? width) (some? height))
-     (.viewport gl 0 0 width height)
-     (set-gl-viewport! gl))
-   gl))
+     (do (.viewport gl 0 0 width height) gl)
+     (set-gl-viewport! gl))))
 
 (defn clear-canvas!
   ([gl]
    (clear-canvas! gl false [0 0 0 0]))
   ([gl clear-depth?] (clear-canvas! gl clear-depth? [0 0 0 0]))
   ([gl clear-depth? color]
-
    (apply js-invoke gl "clearColor" (or color [0 0 0 0]))
    (if clear-depth?
      (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
      (.clear gl (.-COLOR_BUFFER_BIT gl)))
-
-   ;(.clearColor gl 0 0 0 0)
-   ;(if clear-depth?
-   ;  (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))
-   ;  (.clear gl (.-COLOR_BUFFER_BIT gl)))
-
-
    gl))
 
 (defn bind-buffer
@@ -127,7 +120,6 @@
      :target target
      :data   data
      :usage  usage}))
-
 
 (defn set-attribute!
   [gl program {:keys [name size type normalize stride offset buffer-info]}]
@@ -252,9 +244,9 @@
 
   (doseq [{:keys [program attributes uniforms element features textures]} (vals objects-to-draw)]
     (-> (use-program! gl program)
-        (set-textures! (vals textures))
         (enable-features! features)
         (set-uniforms! program (vals uniforms))
+        ;(set-textures! (vals textures))
         ;(set-attributes! program (vals attributes))
         (draw-arrays! element)))
   gl)
@@ -342,7 +334,7 @@
                                 on-load))))
      texture)))
 
-(defn initialize-texture
+(defn initialize-texture-from-img
   [img-name on-load]
   (let [img (js/Image.)]
     (aset img "src" img-name)
@@ -363,12 +355,6 @@
   (apply js-invoke gl "framebufferTexture2D" texture-data)
   gl)
 
-(defn allocate-texture
-  [gl texture-type texture & texture-data]
-  (bind-texture! gl texture-type texture)
-  (apply js-invoke gl "texImage2D" texture-data)
-  gl)
-
 (defn- gl-invoke
   [gl fn args]
   (apply js-invoke gl fn args)
@@ -383,20 +369,139 @@
   (gl-invoke gl "enableVertexAttribArray" args))
 
 (defn attribute
-  [gl program {:keys [name size type normalize stride offset data usage] :as attribute}]
+  [gl program {:keys [name size type normalize stride offset data usage target] :as attribute}]
   (let [buffer (.createBuffer gl)
         location (.getAttribLocation gl program name)]
-    (-> (bind-buffer gl buffer (.-ARRAY-BUFFER gl))
-        (buffer-data {:target   (.-ARRAY-BUFFER gl)
+    (-> (bind-buffer gl buffer (or target (.-ARRAY-BUFFER gl)))
+        (buffer-data {:target   (or target (.-ARRAY-BUFFER gl))
                       :src-data data
                       :usage    (or usage (.-STATIC_DRAW gl))})
-        (vertex-attrib-pointer location size type (or normalize false) (or stride 0) (or offset 0))
+        (vertex-attrib-pointer location size (or type (.-FLOAT gl)) (or normalize false) (or stride 0) (or offset 0))
         (enable-vertex-attrib-array location))
 
     (-> (assoc attribute :buffer buffer)
-        (assoc :location location))
-    ))
+        (assoc :location location)
+        (assoc :target (or target (.-ARRAY-BUFFER gl)))
+        (assoc :usage (or usage (.-STATIC_DRAW gl)))
+        (assoc :type (or type (.-FLOAT gl)))
+        (assoc :normalize (or normalize false))
+        (assoc :stride (or stride 0))
+        (assoc :offset (or offset 0)))))
 
+(defn framebuffer-complete?
+  [gl]
+  (= (.checkFramebufferStatus gl (.-FRAMEBUFFER gl)) (.-FRAMEBUFFER_COMPLETE gl)))
+
+(defn pixels->object
+  "assign an pixels to a texture object"
+  [gl texture & texture-data]
+  (-> (bind-texture! gl (.-TEXTURE_2D gl) texture)
+      (gl-invoke "texImage2D" texture-data))
+  gl)
+
+(defn img-pow-2?
+  [img]
+  (let [w (aget img "width")
+        h (aget img "height")]
+    (and (power-of-two? w) (power-of-two? h))))
+
+(defn generate-mipmap!
+  [gl]
+  (.generateMipmap gl (.-TEXTURE_2D gl))
+  gl)
+
+(defn set-tex-parameteri!
+  [gl {:keys [target p-name param]}]
+  (.texParameteri gl (or target (.-TEXTURE_2D gl)) p-name param)
+  gl)
+
+(defn texture-pixels
+  [gl {:keys [pixels params-i target width height border level internalformat format type dont-allocate?] :as data}]
+  (let [texture (create-a-texture gl)
+        target (or target (.-TEXTURE_2D gl))
+        level (or level 0)
+        internalformat (or internalformat (.-RGBA gl))
+        format (or format (.-RGBA gl))
+        type (or type (.-UNSIGNED_BYTE gl))
+        dont-allocate? (or dont-allocate? false)]
+
+    (if-not dont-allocate?
+      (pixels->object gl texture target level internalformat width height border format type pixels) ;; assign the img to a texture obj
+      (bind-texture! gl (.-TEXTURE_2D gl) texture))
+
+    (doseq [param-i (vals params-i)]
+      (set-tex-parameteri! gl param-i))
+
+    (-> (assoc data :target target)
+        (assoc :texture-obj texture)
+        (assoc :level level)
+        (assoc :internalformat internalformat)
+        (assoc :format format)
+        (assoc :type type))))
+
+(defn texture-img
+  "we need to:
+    pre to this, create buffer and call bufferData on them for both texture data and object data
+
+    1) init texture -----> load the img, and when onload is done, goto next step
+    2) gl.createTexture
+       gl.getUniformLocation(gl.program, 'u_sampler')
+       activate and bind texture, set text params, call uniformi0, then we can draw.
+    "
+  [gl {:keys [pixels params-i mipmap? target level internalformat format type] :as data}]
+  (let [texture (create-a-texture gl)
+        target (or target (.-TEXTURE_2D gl))
+        level (or level 0)
+        internalformat (or internalformat (.-RGBA gl))
+        format (or format (.-RGBA gl))
+        type (or type (.-UNSIGNED_BYTE gl))]
+
+    ;; assign the img to a texture obj
+    (pixels->object gl texture target level internalformat format type pixels)
+
+    (when mipmap?
+      (if (img-pow-2? pixels)
+        (generate-mipmap! gl)
+        (println "Img not power of two...")))
+
+    (doseq [param-i (vals params-i)]
+      (set-tex-parameteri! gl param-i))
+
+    (-> (assoc data :target target)
+        (assoc :texture-obj texture)
+        (assoc :level level)
+        (assoc :internalformat internalformat)
+        (assoc :format format)
+        (assoc :type type))))
+
+(defn framebuffer-texture-2D
+  [gl & args]
+  (gl-invoke gl "framebufferTexture2D" args))
+
+(defn texture->framebuffer
+  "Attach a texture object specified by texture to the framebuffer object bound by target."
+  [gl {:keys [framebuffer attachment textarget texture level]}]
+  (let [attachment (or attachment (.-COLOR_ATTACHMENT0 gl))
+        textarget (or textarget (.-TEXTURE_2D gl))
+        level (or level 0)]
+    (-> (bind-framebuffer! gl framebuffer)
+        (framebuffer-texture-2D (.-FRAMEBUFFER gl) attachment textarget texture level))
+    gl))
+
+(defn framebuffer
+  [gl {:keys [texture]}]
+  (let [fb (.createFramebuffer gl)]
+    (texture->framebuffer gl {:framebuffer fb
+                              :texture     texture})
+    fb))
+
+(defn clear-color
+  [gl & colors]
+  (gl-invoke gl "clearColor" colors))
+
+(defn clear
+  ([gl]
+   (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))))
 
 
 

@@ -59,34 +59,29 @@
 (defn setup!
   []
   (-> (swap! state-atom (fn [{:keys [gl rect] :as state}]
-                          (assoc state :objects-to-draw
-                                       {:my-rect {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                                  :attributes {:a_position {:name        "a_position"
-                                                                            :size        2
-                                                                            :type        (.-FLOAT gl)
-                                                                            :normalize   false
-                                                                            :stride      0
-                                                                            :offset      0
-                                                                            :buffer-info (webgl/create-buffer gl
-                                                                                                              {:data   (js/Float32Array. shapes/f-shape-2d)
-                                                                                                               :usage  (.-STATIC_DRAW gl)
-                                                                                                               :target (.-ARRAY-BUFFER gl)})}}
-                                                  :uniforms   {:u_resolution  {:name   "u_resolution"
-                                                                               :type   "uniform2f"
-                                                                               :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
-                                                               :u_color       {:name   "u_color"
-                                                                               :type   "uniform4fv"
-                                                                               :values (:color rect)}
-                                                               :u_translation {:name   "u_translation"
-                                                                               :type   "uniform2fv"
-                                                                               :values [(:x rect) (:y rect)]}
-                                                               :u_rotation    {:name   "u_rotation"
-                                                                               :type   "uniform2fv"
-                                                                               :values (:rotation rect)}
-                                                               }
-                                                  :element    {:draw-type (.-TRIANGLES gl)
-                                                               :offset    0
-                                                               :count     18}}})))))
+                          (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                            (assoc state :objects-to-draw
+                                         {:my-rect {:program    program
+                                                    :attributes {:a_position (webgl/attribute gl program
+                                                                                              {:name "a_position"
+                                                                                               :size 2
+                                                                                               :data (js/Float32Array. shapes/f-shape-2d)})}
+                                                    :uniforms   {:u_resolution  {:name   "u_resolution"
+                                                                                 :type   "uniform2f"
+                                                                                 :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}
+                                                                 :u_color       {:name   "u_color"
+                                                                                 :type   "uniform4fv"
+                                                                                 :values (:color rect)}
+                                                                 :u_translation {:name   "u_translation"
+                                                                                 :type   "uniform2fv"
+                                                                                 :values [(:x rect) (:y rect)]}
+                                                                 :u_rotation    {:name   "u_rotation"
+                                                                                 :type   "uniform2fv"
+                                                                                 :values (:rotation rect)}
+                                                                 }
+                                                    :element    {:draw-type (.-TRIANGLES gl)
+                                                                 :offset    0
+                                                                 :count     18}}}))))))
 
 (def ^:export lesson
   {:title           (fn []

@@ -39,29 +39,22 @@
 (defn setup!
   []
   (swap! state-atom (fn [{:keys [gl] :as state}]
-                      (assoc state :objects-to-draw {:thing {:program    (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})
-                                                             :attributes {:a_position {:name        "a_position"
-                                                                                       :size        2
-                                                                                       :type        (.-FLOAT gl)
-                                                                                       :normalize   false
-                                                                                       :stride      0
-                                                                                       :offset      0
-                                                                                       :buffer-info (webgl/create-buffer gl
-                                                                                                                         {:data   (js/Float32Array. [10 20
-                                                                                                                                                     80 20
-                                                                                                                                                     10 30
-                                                                                                                                                     10 30
-                                                                                                                                                     80 20
-                                                                                                                                                     80 30])
-                                                                                                                          :usage  (.-STATIC_DRAW gl)
-                                                                                                                          :target (.-ARRAY-BUFFER gl)})}}
-                                                             :uniforms   {:u_resolution {:name   "u_resolution"
-                                                                                         :type   "uniform2f"
-                                                                                         :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}}
-                                                             :element    {:draw-type (.-TRIANGLES gl)
-                                                                          :offset    0
-                                                                          :count     6}}}))))
-
+                      (let [program (webgl/link-shaders! gl {:fs fragment-shader :vs vertex-shader})]
+                        (assoc state :objects-to-draw {:thing {:program    program
+                                                               :attributes {:a_position (webgl/attribute gl program {:name "a_position"
+                                                                                                                     :size 2
+                                                                                                                     :data (js/Float32Array. [10 20
+                                                                                                                                              80 20
+                                                                                                                                              10 30
+                                                                                                                                              10 30
+                                                                                                                                              80 20
+                                                                                                                                              80 30])})}
+                                                               :uniforms   {:u_resolution {:name   "u_resolution"
+                                                                                           :type   "uniform2f"
+                                                                                           :values [(aget gl "canvas" "width") (aget gl "canvas" "height")]}}
+                                                               :element    {:draw-type (.-TRIANGLES gl)
+                                                                            :offset    0
+                                                                            :count     6}}})))))
 
 (def ^:export lesson
   {:title           (fn []

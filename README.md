@@ -1021,3 +1021,43 @@ We are going to get this texture visible!
 ##### Conclusion
 The story continues. The found book above is excellent.
 
+--- 
+
+### 25/30
+
+##### What the heck did we do yesterday?
+Trying to figure out how texture actually works.
+
+##### What did we do today?
+Rock bottom today, unable to get this stupid mipmap example to work.
+
+##### Moving forward?
+Not sure. Let's skip these tutorials and continue with creating something and following the awesome book instead.
+
+##### Conclusion
+WebGL. I don't know what to say to you..
+
+---
+### 26/30
+
+##### What the heck did we do yesterday?
+
+##### What did we do today?
+Yet again, I said, I really like the current design but I'm ready to take that back. Big time.
+
+We need something better. Clojure is about data, immutable data and functions operating on this data. 
+WebGL is following a procedural philosophy, which I find quite hard to adapt to the Clojure paradigm.
+
+What direction do we want to go? We want to create a state with our necessary data. Each perpetuated subset of this data
+should be able to form all the necessities for a fully WebGL pipeline call.
+
+For example, you want to put data in an attribute? The data required for that should be readily available in the initial state,
+or a mutated state for you to be able to do that.
+
+Is it possible then to create a initial state with all the data required to do actually render something?
+
+By rendering something, it should be possible to call a function that is operating on the state multiple times with the given data in the state.
+
+##### Moving forward?
+
+##### Conclusion

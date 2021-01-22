@@ -30,6 +30,7 @@
           (js/console.log (.getShaderInfoLog gl shader))
           (.deleteShader gl shader))))))
 
+
 (defn create-program
   [gl vertex-shader fragment-shader]
   (let [program (.createProgram gl)]
@@ -122,10 +123,10 @@
      :usage  usage}))
 
 (defn set-attribute!
-  [gl program {:keys [name size type normalize stride offset buffer-info]}]
+  [gl program {:keys [name size type normalize stride offset buffer target]}]
   (let [location (.getAttribLocation gl program name)]
 
-    (bind-buffer gl (:buffer buffer-info) (:target buffer-info))
+    (bind-buffer gl buffer target)
 
     ;; Describe how to take the data from our buffer and give it to our shader.
     (.vertexAttribPointer gl location size type normalize stride offset)
@@ -495,13 +496,15 @@
                               :texture     texture})
     fb))
 
-(defn clear-color
+(defn clear-color!
   [gl & colors]
   (gl-invoke gl "clearColor" colors))
 
-(defn clear
-  ([gl]
-   (.clear gl (bit-or (.-COLOR_BUFFER_BIT gl) (.-DEPTH_BUFFER_BIT gl)))))
+(defn clear!
+  [gl & bits]
+  (let [bit-colors (apply bit-or bits)]
+    (.clear gl bit-colors))
+  gl)
 
 
 

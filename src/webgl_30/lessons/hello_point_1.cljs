@@ -1,4 +1,4 @@
-(ns webgl-30.lessons.HelloPoint2
+(ns webgl-30.lessons.hello_point_1
   (:require [webgl-30.webgl-id2 :as w]
             [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas]]))
@@ -9,10 +9,8 @@
   (reset! state-atom initial-state))
 
 (def vertex-shader
-  "
-  attribute vec4 a_position;
-  void main() {
-       gl_Position = a_position;
+  "void main() {
+       gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
        gl_PointSize = 10.0;
   }")
 
@@ -24,10 +22,6 @@
 (defn draw!
   [_ {:keys [gl]}]
 
-  (-> gl
-      (w/get-attribute-location "a_position")
-      (w/vertex-attrib-3f )
-      )
   (doto gl
     (w/clear-color! 0.0 0.0 0.0 1.0)
     (w/clear! (.-COLOR_BUFFER_BIT gl))
@@ -50,7 +44,7 @@
                        [:h1 {:style {:font-family "monospace"}}
                         "This is chapter 3 from WebGL Programming Guide Interactive 3D Graphics Programming with WebGL"]
                        [:h4 {:style {:font-family "monospace"}}
-                        "HelloPoint - 2 by WebGL Programming Guide Interactive 3D Graphics Programming with WebGL by Kouichi Matsuda, Rodger Lea."]])
+                        "HelloPoint by WebGL Programming Guide Interactive 3D Graphics Programming with WebGL by Kouichi Matsuda, Rodger Lea."]])
    :source          (c/get-filename #'state-atom)
    :tutorial-source "WebGL Programming Guide Interactive 3D Graphics Programming with WebGL by Kouichi Matsuda, Rodger Lea."
    :start           (fn []

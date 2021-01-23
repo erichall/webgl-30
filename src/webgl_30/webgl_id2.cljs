@@ -12,6 +12,10 @@
   (-> (js/document.getElementById canvas-id)
       (.getContext "webgl")))
 
+(defn get-canvas
+  [gl]
+  (aget gl "canvas"))
+
 (defn shader-source [gl shader source] (.shaderSource gl shader source) gl)
 (defn compile-shader [gl shader] (.compileShader gl shader))
 (defn get-shader-parameter [gl shader param] (.getShaderParameter gl shader param))
@@ -77,13 +81,100 @@
   [gl & args]
   (gl-invoke gl "drawArrays" args))
 
-(defn get-attribute-location
-  [gl name]
-  (let [loc (gl-invoke gl "getAttribLocation" name)]
-    (if (< 0 loc)
-      (println "Failed to get location of " name)
+(defn- get-location
+  [gl program type name]
+  (let [loc (gl-invoke gl type [program name])]
+    (if (< loc 0)
+      (println "Failed to get location of " name " of type " type)
       loc)))
 
-(defn vertex-attrib-3f
-  [gl location & args]
-  (gl-invoke gl "vertexAttrib3f" (cons location args)))
+(defn get-attribute-location
+  [gl program name]
+  (get-location gl program "getAttribLocation" name))
+
+(defn get-uniform-location
+  [gl program name]
+  (get-location gl program "getUniformLocation" name))
+
+(defn vertex-attrib-invoke
+  [gl attrib location args]
+  {:pre [(some? location)]}
+  (gl-invoke gl (str "vertexAttrib" attrib) (cons location args)))
+
+(defn vertex-attrib-3f [gl location & args] (vertex-attrib-invoke gl "3f" location args))
+(defn vertex-attrib-1f [gl location & args] (vertex-attrib-invoke gl "1f" location args))
+
+(defn uniform4f [gl location & args] (gl-invoke gl "uniform4f" (cons location args)))
+
+(defn create-buffer
+  [gl]
+  (.createBuffer gl))
+
+(defn bind-buffer!
+  [gl target buffer]
+  (.bindBuffer gl target buffer))
+
+(defn buffer-data!
+  "Allocate storage and write the data specified by data to the buffer object bound to target."
+  [gl target data usage]
+  (.bufferData gl target data usage))
+
+(defn vertex-attrib-pointer
+  [gl & args]
+  (gl-invoke gl "vertexAttribPointer" args))
+
+(defn enable-vertex-attrib-array!
+  [gl & location]
+  (gl-invoke gl "enableVertexAttribArray" location))
+
+(defn initialize-vertex-buffer!
+  "Five steps to pass data to a vertex shader
+    1) Create a buffer.
+    2) Bind that buffer.
+    3) Write data to that buffer.
+    4) Assign the buffer to an attribute.
+    5) Enable the assignment."
+  [gl {:keys [target data usage attribute]}]
+  (let [buffer (create-buffer gl)
+        target (or target (.-ARRAY_BUFFER gl))
+        usage (or usage (.-STATIC_DRAW gl))]
+    (when-not buffer
+      (println "Failed to create a buffer object"))
+
+    (doto gl
+      ;; bind the buffer object to the target.
+      (bind-buffer! target buffer)
+
+      ;; write data into the buffer
+      (buffer-data! target data usage))
+
+    ;; assign the buffer object bound to `target` to an attribute variable
+    (let [{:keys [location size type normalized stride offset]
+           :or   {type       (.-FLOAT gl)
+                  normalized false
+                  stride     0
+                  offset     0}} attribute]
+      (doto gl
+        (vertex-attrib-pointer location size type normalized stride offset)
+
+        ;; enable the assignment
+        (enable-vertex-attrib-array! location)))
+
+    {:buffer buffer
+     :target target
+     :data   data
+     :usage  usage}))
+
+(defn attribute
+  [gl program {:keys [name size type normalized stride offset]}]
+  {:location   (get-attribute-location gl program name)
+   :size       size
+   :type       (or type (.-FLOAT gl))
+   :normalized (or normalized false)
+   :stride     (or stride 0)
+   :offset     (or offset 0)})
+
+(defn uniform
+  [gl program {:keys [name ]}]
+  {:location (get-uniform-location gl program name)})
+

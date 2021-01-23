@@ -1041,6 +1041,7 @@ WebGL. I don't know what to say to you..
 ### 26/30
 
 ##### What the heck did we do yesterday?
+Dabbed with the textures as usual.
 
 ##### What did we do today?
 Yet again, I said, I really like the current design but I'm ready to take that back. Big time.
@@ -1054,10 +1055,29 @@ should be able to form all the necessities for a fully WebGL pipeline call.
 For example, you want to put data in an attribute? The data required for that should be readily available in the initial state,
 or a mutated state for you to be able to do that.
 
-Is it possible then to create a initial state with all the data required to do actually render something?
+Is it possible then to create an initial state with all the data required to do actually render something?
 
 By rendering something, it should be possible to call a function that is operating on the state multiple times with the given data in the state.
 
 ##### Moving forward?
+Conway WebGL here we come.
 
 ##### Conclusion
+It's a mess.
+
+--- 
+
+### 27/30
+
+##### What the heck did we do yesterday?
+Testing out some new strategies while reading chapters in the excellent WebGL book mentioned above.
+
+##### What did we do today?
+Implementing buffers in this new way. Yet, we fall back into hold habit it seems. It's easy to create a mess of this API
+while trying to "wrap it" in some cleaver way, especially if you are a complete rookie on both game programming and the API itself.
+
+##### Moving forward?
+Let's do some proper textures.
+
+##### Conclusion
+Bad API wrapping is like bad christmas paper; You see what it actually is therefore it's a waste of resources.

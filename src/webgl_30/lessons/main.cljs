@@ -24,11 +24,14 @@
             [webgl-30.lessons.textures-3 :as textures-3]
             [webgl-30.lessons.textures-3-revised :as textures-3-revised]
 
-            [webgl-30.lessons.HelloPoint1 :as hello-point-1]
-            [webgl-30.lessons.HelloPoint2 :as hello-point-2]
+            [webgl-30.lessons.hello_point_1 :as hello-point-1]
+            [webgl-30.lessons.hello_point_2 :as hello-point-2]
+            [webgl-30.lessons.click-point :as click-point]
+            [webgl-30.lessons.color-point :as color-point]
+            [webgl-30.lessons.multipoint :as multipoint]
             ))
 
-(def initial-state {:active-page-index 23
+(def initial-state {:active-page-index 26
                     :lessons           [fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
@@ -53,6 +56,9 @@
                                         textures-3-revised/lesson
                                         hello-point-1/lesson
                                         hello-point-2/lesson
+                                        click-point/lesson
+                                        color-point/lesson
+                                        multipoint/lesson
                                         ]})
 
 (declare render-component)

@@ -105,6 +105,7 @@
 (defn vertex-attrib-1f [gl location & args] (vertex-attrib-invoke gl "1f" location args))
 
 (defn uniform4f [gl location & args] (gl-invoke gl "uniform4f" (cons location args)))
+(defn uniform2f [gl location & args] (gl-invoke gl "uniform2f" (cons location args)))
 
 (defn create-buffer
   [gl]
@@ -156,7 +157,6 @@
                   offset     0}} attribute]
       (doto gl
         (vertex-attrib-pointer location size type normalized stride offset)
-
         ;; enable the assignment
         (enable-vertex-attrib-array! location)))
 
@@ -164,6 +164,12 @@
      :target target
      :data   data
      :usage  usage}))
+
+(defn refresh-vertex-buffer!
+  [gl {:keys [buffer target data usage]}]
+  (doto gl
+    (bind-buffer! target buffer)
+    (buffer-data! target data usage)))
 
 (defn attribute
   [gl program {:keys [name size type normalized stride offset]}]
@@ -175,6 +181,17 @@
    :offset     (or offset 0)})
 
 (defn uniform
-  [gl program {:keys [name ]}]
+  [gl program {:keys [name]}]
   {:location (get-uniform-location gl program name)})
+
+(defn set-viewport!
+  ([gl]
+   (let [width (get-canvas-width gl)
+         height (get-canvas-height gl)]
+     (.viewport gl 0 0 width height)
+     gl))
+  ([gl width height]
+   (if (and (some? width) (some? height))
+     (do (.viewport gl 0 0 width height) gl)
+     (set-gl-viewport! gl))))
 

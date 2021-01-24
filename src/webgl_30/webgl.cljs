@@ -73,8 +73,6 @@
   [gl]
   (aget gl "canvas" "width"))
 
-
-
 (defn set-gl-viewport!
   ([gl]
    (let [width (get-canvas-width gl)

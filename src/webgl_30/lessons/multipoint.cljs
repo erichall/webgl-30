@@ -37,7 +37,7 @@
     (doto gl
       (w/clear-color! 0.0 0.0 0.0 1.0)
       (w/clear! (.-COLOR_BUFFER_BIT gl))
-      (w/draw-arrays! (.-POINTS gl) 0 3))))
+      (w/draw-arrays! (.-POINTS gl) 0 4))))
 
 (defn setup!
   []

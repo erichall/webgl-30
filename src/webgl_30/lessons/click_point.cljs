@@ -36,11 +36,7 @@
 
     (doseq [[x y] clicks]
       (w/vertex-attrib-3f gl (w/get-attribute-location gl program "a_position") x y 0.0)
-      (w/draw-arrays! gl (.-POINTS gl) 0 1)
-      )
-
-    )
-  )
+      (w/draw-arrays! gl (.-POINTS gl) 0 1))))
 
 (defn setup!
   []
@@ -82,9 +78,7 @@
                                                                                               c-x (/ (- (- x l) (/ h 2)) (/ h 2))
                                                                                               c-y (/ (- (/ w 2) (- y t)) (/ w 2))]
                                                                                           (-> (swap! state-atom update :clicks conj [c-x c-y])
-                                                                                              raf-draw!)
-                                                                                          )
-                                                                                        ))
+                                                                                              raf-draw!))))
 
                                                        (setup!)
                                                        (raf-draw! @state-atom))))}]))})

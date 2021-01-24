@@ -151,18 +151,15 @@
     [slider-row "camera" (int (rad->deg (get-in state [:camera :angle-rad]))) 0 360
      (fn [val]
        (trigger-event :data-change {:path  [:camera :angle-rad]
-                                    :value (deg->rad val)}))
-     ]
-    ]
-   ])
+                                    :value (deg->rad val)}))]]])
 
 (defn webgl-canvas
-  [{:keys [height width id on-mount on-unmount] :or {on-unmount (fn [])}}]
+  [{:keys [height width style id on-mount on-unmount] :or {on-unmount (fn [])}}]
   (r/create-class
     {:display-name           "webgl-canvas"
      :reagent-render         (fn [] [:canvas {:width  (str width "px")
                                               :height (str height "px")
-                                              :style  {:border "1px dashed green"}
+                                              :style  (merge {:border "1px dashed green"} style)
                                               :id     id}])
      :component-did-mount    on-mount
      :component-will-unmount (fn []

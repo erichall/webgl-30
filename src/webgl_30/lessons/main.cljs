@@ -29,9 +29,11 @@
             [webgl-30.lessons.click-point :as click-point]
             [webgl-30.lessons.color-point :as color-point]
             [webgl-30.lessons.multipoint :as multipoint]
+
+            [webgl-30.lessons.conway :as conway]
             ))
 
-(def initial-state {:active-page-index 26
+(def initial-state {:active-page-index 27
                     :lessons           [fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
@@ -59,6 +61,9 @@
                                         click-point/lesson
                                         color-point/lesson
                                         multipoint/lesson
+
+                                        conway/lesson
+
                                         ]})
 
 (declare render-component)
@@ -119,7 +124,8 @@
                                                      (if (= (dec (count lessons)) active-page-index)
                                                        state
                                                        (assoc state :active-page-index (inc active-page-index))))))}]]
-     [:div {:style {:display "block"}}
+     [:div
+      {:style {:display "block"}}
       [start]]
      [:div
       [:span {:style {:color         "white"

@@ -1081,3 +1081,17 @@ Let's do some proper textures.
 
 ##### Conclusion
 Bad API wrapping is like bad christmas paper; You see what it actually is therefore it's a waste of resources.
+
+### 28/30
+
+##### What the heck did we do yesterday?
+Dabbed with the new book and creating buffers.
+
+##### What did we do today?
+Started with WebGL Conway. 
+
+##### Moving forward?
+Conway.
+
+##### Conclusion
+Conway. Conway. Conway. Not much WebGL, I feel somewhat more productive with WebGL now at least.

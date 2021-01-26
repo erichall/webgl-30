@@ -12,16 +12,17 @@
                     :running?       false
                     :cell-size      4
                     :toroidal?      true
-                    :grid-size      400
+                    :grid-size      1024
                     :fps            nil
                     :last-timestamp 0
                     ;:cells     #{[1 0] [1 1] [1 2]}
                     ;:cells          #{[0 0] [2 0] [1 1] [1 2] [2 1]}
-                    :cells          (set (for [x (range 0 40)
-                                               y (range 0 40)]
+                    :cells          (set (for [x (range 0 150)
+                                               y (range 0 150)]
                                            [x y]))
                     })
-(defonce state-atom (r/atom nil))
+(defonce cell->rect-lookup-atom (atom nil))
+(defonce state-atom (atom nil))
 (when (nil? @state-atom)
   (reset! state-atom initial-state))
 
@@ -54,13 +55,7 @@
        gl_FragColor = u_fragcolor;
    }")
 
-(defn cells->rects
-  [cells cell-size]
-  (reduce (fn [acc [x y]]
-            (concat acc (w/rect {:x      (* cell-size x)
-                                 :y      (* cell-size y)
-                                 :width  cell-size
-                                 :height cell-size}))) [] cells))
+
 (defn raf-draw!
   [state]
   (swap! state-atom assoc :raf-id (js/requestAnimationFrame (fn [t] (draw! t state)))))
@@ -68,13 +63,15 @@
 (defn draw!
   [timestamp {:keys [gl cell-size objects-to-draw cells] :as state}]
   (let [a-position-buffer (-> (get-in objects-to-draw [:the-object :buffers :a-position-buffer])
-                              (assoc :data (js/Float32Array. (cells->rects cells cell-size))))
+                              (assoc :data (js/Float32Array.
+                                             ;(cc/cells->rects cells cell-size)
+                                             (cc/lookup->data @cell->rect-lookup-atom cells)
+                                             )))
         n (* (count cells) 12)]
     (apply w/uniform4f gl (get-in objects-to-draw [:the-object :uniforms :u-fragcolor :location]) [0.0 1.0 0.0 1.0])
 
     (doto gl
       (w/set-viewport! (aget gl "canvas" "width") (aget gl "canvas" "height"))
-      ;(w/uniform2f (get-in objects-to-draw [:the-object :uniforms :u-resolution :location]) (aget gl "canvas" "width") (aget gl "canvas" "height"))
       (w/refresh-vertex-buffer! a-position-buffer)
       (w/clear-color! 0.0 0.0 0.0 1.0)
       (w/clear! (.-COLOR_BUFFER_BIT gl))
@@ -87,7 +84,8 @@
                                 (-> (assoc state :cells (cc/tick state))
                                     (assoc :last-timestamp timestamp)
                                     (assoc :fps (Math/round (/ 1 seconds-passed))))))
-            raf-draw!)))))
+            ;raf-draw!
+            )))))
 
 (defn setup!
   []
@@ -153,6 +151,20 @@
       [:line {:x1    s :y1 0 :x2 s :y2 height
               :style {:stroke (or grid-color "gray") :stroke-width stroke-width}}]])])
 
+(defn start
+  [canvas-id]
+  (do
+    (swap! state-atom assoc :gl (w/get-context canvas-id))
+    (setup!)
+    (raf-draw! @state-atom)
+    (swap! state-atom assoc :running? true)
+    )
+  )
+
+(defn step
+  []
+  (raf-draw! @state-atom))
+
 (def ^:export lesson
   {:title           (fn []
                       [:div
@@ -168,6 +180,8 @@
                             h (:grid-size @state-atom)]
                         [:div
                          [:p (:fps @state-atom)]
+                         [:button {:on-click (fn [] (start canvas-id))} "Run"]
+                         [:button {:on-click step} "Step"]
                          [:div {:style {:display               "grid"
                                         :grid-template-columns "1fr"}}
                           [webgl-canvas {:height   h
@@ -178,12 +192,15 @@
                                                     :border            "none"}
                                          :on-mount (fn []
                                                      (let [gl (w/get-context canvas-id)]
-                                                       (do
-                                                         (swap! state-atom assoc :gl gl)
-                                                         (setup!)
-                                                         (raf-draw! @state-atom)
-                                                         (swap! state-atom assoc :running? true)
-                                                         )))}]
+                                                       (when (nil? @cell->rect-lookup-atom)
+                                                         (reset! cell->rect-lookup-atom (cc/cell-lookup-map (:grid-size @state-atom) (:cell-size @state-atom))))
+                                                       ;(do
+                                                       ;  (swap! state-atom assoc :gl gl)
+                                                       ;  (setup!)
+                                                       ;  (raf-draw! @state-atom)
+                                                       ;  (swap! state-atom assoc :running? true)
+                                                       ;  )
+                                                       ))}]
 
                           [grid-2d {:height       h
                                     :width        w

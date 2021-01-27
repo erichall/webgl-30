@@ -10,12 +10,7 @@
                       :target        :browser
                       :module-loader true
                       :modules
-                                     {:main
-                                      {:init-fn webgl-30.lessons.main/init!}
-                                      :fundamentals-0
-                                      {:entries    webgl-30.lessons.fundamentals-0
-                                       :depends-on #{:main}}
-                                      }
+                                     {:main {:init-fn webgl-30.lessons.main/init!}}
                       :devtools      {
                                       :after-load webgl-30.lessons.main/reload!
                                       }

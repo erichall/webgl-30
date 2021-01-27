@@ -1095,3 +1095,45 @@ Conway.
 
 ##### Conclusion
 Conway. Conway. Conway. Not much WebGL, I feel somewhat more productive with WebGL now at least.
+
+### 29/30
+
+##### What the heck did we do yesterday?
+Started with Conway.
+
+##### What did we do today?
+Got a really messy running draft of Conway. It's super smooth until a very heavy pattern is run.
+
+##### Moving forward?
+Optimization.
+
+##### Conclusion
+There are so many WebGL implementation out there running super smooth, so we should be able to get close to it at least.
+
+### 30/30
+
+##### What the heck did we do yesterday?
+Conway is up and running with WebGL.
+
+##### What did we do today?
+One optimization was to create a lookup table between each coordinate [x,y] -> [rect-array of 12 datapoints]. I think 
+we could achive more speed by rethinking how that is handled. I also think we should think of how we could use pixels in
+a texture instead of drawing tons rectangles.
+
+It might also be worth to investigate if `gl.POINTS` are better than `gl.ARRAYS`. Since we are only drawing rects anyway.
+
+##### Moving forward?
+Projects and optimization.
+
+##### Conclusion
+It's now been 30 days with WebGL and Clojurescript and from what I've learned so far, WebGL and Cljs don't really mix well.
+I don't see any advantage over using them together. For example, most of the data that you pass to WebGL needs to be in a 
+primitive typed JS array. Everything you do in WebGL is a side effect, like you `bindBuffer` and all calls to `bufferData`
+will point to that buffer etc. 
+
+Still though, I find this new knowledge of WebGL to be really motivating. We are yet only at a very basic level of understanding
+the whole API but with more fundamental knowledge mixed with some cool stuff, I think we can create some cool projects.
+
+I think we will continue to dabble a bit with it and I will write something more substantial of my
+learnings but ye; WebGL and Clojure is like cutting the grass with one of those truck lawn mowers and while you steer it
+you bend over with a hedge clipper to cut some additional grass. (Oh that's bad)

@@ -16,6 +16,15 @@
   [gl]
   (aget gl "canvas"))
 
+(defn canvas-height
+  [gl]
+  (aget gl "canvas" "height"))
+
+(defn canvas-width
+  [gl]
+  (aget gl "canvas" "width"))
+
+
 (defn shader-source [gl shader source] (.shaderSource gl shader source) gl)
 (defn compile-shader [gl shader] (.compileShader gl shader))
 (defn get-shader-parameter [gl shader param] (.getShaderParameter gl shader param))
@@ -142,12 +151,14 @@
     (when-not buffer
       (println "Failed to create a buffer object"))
 
-    (doto gl
-      ;; bind the buffer object to the target.
-      (bind-buffer! target buffer)
+    ;; bind the buffer object to the target.
+    (bind-buffer! gl target buffer)
 
+
+    (when (> (.-length data) 0)
       ;; write data into the buffer
-      (buffer-data! target data usage))
+      (buffer-data! gl target data usage))
+
 
     ;; assign the buffer object bound to `target` to an attribute variable
     (let [{:keys [location size type normalized stride offset]
@@ -186,12 +197,25 @@
 
 (defn set-viewport!
   ([gl]
-   (let [width (get-canvas-width gl)
-         height (get-canvas-height gl)]
+   (let [width (canvas-width gl)
+         height (canvas-height gl)]
      (.viewport gl 0 0 width height)
      gl))
   ([gl width height]
    (if (and (some? width) (some? height))
      (do (.viewport gl 0 0 width height) gl)
-     (set-gl-viewport! gl))))
+     (set-viewport! gl))))
+
+(defn rect
+  [{:keys [x y width height]}]
+  (let [x1 x
+        x2 (+ x width)
+        y1 y
+        y2 (+ y height)]
+    [x1 y1
+     x2 y1
+     x1 y2
+     x1 y2
+     x2 y1
+     x2 y2]))
 

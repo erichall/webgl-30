@@ -23,7 +23,6 @@
 
 (defn matrix-multiply-3d
   [a b]
-  ;{:post [(every? (fn [x] (and (some? x) (not (js/isNaN x)))) %)]}
   (let [a00 (nth a (+ (* 0 4) 0))
         a01 (nth a (+ (* 0 4) 1))
         a02 (nth a (+ (* 0 4) 2))

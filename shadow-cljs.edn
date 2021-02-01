@@ -11,9 +11,4 @@
                       :module-loader true
                       :modules
                                      {:main {:init-fn webgl-30.lessons.main/init!}}
-                      :devtools      {
-                                      :after-load webgl-30.lessons.main/reload!
-                                      }
-                      }
-
-                }}
+                      :devtools      {:after-load webgl-30.lessons.main/reload!}}}}

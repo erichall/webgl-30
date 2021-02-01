@@ -122,7 +122,6 @@
 
 (defn perspective-3d-matrix
   [field-of-view-in-radians aspect near far]
-  ;{:pre [(number? field-of-view-in-radians) (number? aspect) (number? near) (number? far)]}
   (let [f (Math/tan (- (* Math/PI 0.5)
                        (* 0.5 field-of-view-in-radians)))
         range-in-view (/ 1.0 (- near far))]
@@ -149,7 +148,6 @@
 
 (defn translation-3d-matrix
   [[tx ty tz]]
-  ;{:pre [(number? tx) (number? ty) (number? tz)]}
   [1 0 0 0
    0 1 0 0
    0 0 1 0

@@ -159,7 +159,6 @@
       ;; write data into the buffer
       (buffer-data! gl target data usage))
 
-
     ;; assign the buffer object bound to `target` to an attribute variable
     (let [{:keys [location size type normalized stride offset]
            :or   {type       (.-FLOAT gl)

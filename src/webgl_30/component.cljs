@@ -213,7 +213,7 @@
                :width         width
                :id            "unit-circle"
                :style         {:border "1px dashed orange"}
-               :on-mouse-up   (fn [evt] (swap! local-state-atom assoc :mouse-down false))
+               :on-mouse-up   (fn [] (swap! local-state-atom assoc :mouse-down false))
                :on-mouse-move (fn [evt]
                                 (when mouse-down
                                   (let [svg (js/document.querySelector "#unit-circle")

@@ -30,8 +30,7 @@
             [webgl-30.lessons.color-point :as color-point]
             [webgl-30.lessons.multipoint :as multipoint]
 
-            [webgl-30.lessons.conway :as conway]
-            ))
+            [webgl-30.lessons.conway :as conway]))
 
 (def initial-state {:active-page-index 27
                     :lessons           [fundamentals-0/lesson
@@ -140,9 +139,7 @@
       [:span "Github: " [:a {:href   (str "https://github.com/erichall/webgl-30/blob/master/src/" source)
                              :target "_blank"
                              :style  {:color       "rgba(0, 181, 255, 1)"
-                                      :font-family "monospace"}} "[source]"]]
-
-      ]]))
+                                      :font-family "monospace"}} "[source]"]]]]))
 
 (defn render-component
   [state]

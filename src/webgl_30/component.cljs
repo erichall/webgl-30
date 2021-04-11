@@ -18,8 +18,7 @@
            :step      step
            :min       min
            :max       max
-           :style     {:width  "100%"
-                       :cursor "pointer"}
+           :style     {:width  "100%" :cursor "pointer"}
            :on-change (fn [evt]
                         (let [val (js/parseFloat (.. evt -target -value))]
                           (on-change val)))}])

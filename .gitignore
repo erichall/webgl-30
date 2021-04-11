@@ -15,6 +15,7 @@ pom.xml
 .shadow-cljs
 dev/
 node_modules/
+resources/public/cljs-runtime/
 webgl-tutorial.iml
 
 

@@ -8,13 +8,13 @@
             [webgl-30.lessons.translation-2d-1 :as translation-2d-1]
             [webgl-30.lessons.rotation-2d-0 :as rotation-2d-0]
             [webgl-30.lessons.scale-2d :as scale-2d]
-            [webgl-30.lessons.matrices-2d_0 :as matrices-2d_0]
-            [webgl-30.lessons.matrices-2d_1 :as matrices-2d_1]
-            [webgl-30.lessons.matrices-2d_2 :as matrices-2d_2]
-            [webgl-30.lessons.orthographic_3d_0 :as orthographic-3d-0]
-            [webgl-30.lessons.orthographic_3d_1 :as orthographic-3d-1]
-            [webgl-30.lessons.perspective_3d_0 :as perspective-3d-0]
-            [webgl-30.lessons.perspective_3d_1 :as perspective-3d-1]
+            [webgl-30.lessons.matrices-2d-0 :as matrices-2d-0]
+            [webgl-30.lessons.matrices-2d-1 :as matrices-2d-1]
+            [webgl-30.lessons.matrices-2d-2 :as matrices-2d-2]
+            [webgl-30.lessons.orthographic-3d-0 :as orthographic-3d-0]
+            [webgl-30.lessons.orthographic-3d-1 :as orthographic-3d-1]
+            [webgl-30.lessons.perspective-3d-0 :as perspective-3d-0]
+            [webgl-30.lessons.perspective-3d-1 :as perspective-3d-1]
             [webgl-30.lessons.cameras-0 :as cameras-0]
             [webgl-30.lessons.cameras-1 :as cameras-1]
             [webgl-30.lessons.animations :as animations]
@@ -24,8 +24,8 @@
             [webgl-30.lessons.textures-3 :as textures-3]
             [webgl-30.lessons.textures-3-revised :as textures-3-revised]
 
-            [webgl-30.lessons.hello_point_1 :as hello-point-1]
-            [webgl-30.lessons.hello_point_2 :as hello-point-2]
+            [webgl-30.lessons.hello-point-1 :as hello-point-1]
+            [webgl-30.lessons.hello-point-2 :as hello-point-2]
             [webgl-30.lessons.click-point :as click-point]
             [webgl-30.lessons.color-point :as color-point]
             [webgl-30.lessons.multipoint :as multipoint]
@@ -40,9 +40,9 @@
                                         translation-2d-1/lesson
                                         rotation-2d-0/lesson
                                         scale-2d/lesson
-                                        matrices-2d_0/lesson
-                                        matrices-2d_1/lesson
-                                        matrices-2d_2/lesson
+                                        matrices-2d-0/lesson
+                                        matrices-2d-1/lesson
+                                        matrices-2d-2/lesson
                                         orthographic-3d-0/lesson
                                         orthographic-3d-1/lesson
                                         perspective-3d-0/lesson

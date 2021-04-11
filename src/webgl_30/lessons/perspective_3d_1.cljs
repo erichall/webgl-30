@@ -1,4 +1,4 @@
-(ns webgl-30.lessons.perspective_3d_1
+(ns webgl-30.lessons.perspective-3d-1
   (:require [reagent.core :as r]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]

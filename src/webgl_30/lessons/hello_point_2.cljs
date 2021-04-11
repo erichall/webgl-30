@@ -1,4 +1,4 @@
-(ns webgl-30.lessons.hello_point_2
+(ns webgl-30.lessons.hello-point-2
   (:require [webgl-30.webgl-id2 :as w]
             [webgl-30.core :as c]
             [webgl-30.component :refer [webgl-canvas]]))

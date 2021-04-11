@@ -32,7 +32,7 @@
 
             [webgl-30.lessons.conway :as conway]))
 
-(def initial-state {:active-page-index 27
+(def initial-state {:active-page-index 0
                     :lessons           [fundamentals-0/lesson
                                         fundamentals-1/lesson
                                         fundamentals-2/lesson
@@ -61,7 +61,7 @@
                                         color-point/lesson
                                         multipoint/lesson
 
-                                        conway/lesson
+                                        ;conway/lesson
 
                                         ]})
 

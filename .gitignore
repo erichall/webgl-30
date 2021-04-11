@@ -15,7 +15,6 @@ pom.xml
 .shadow-cljs
 dev/
 node_modules/
-resources
 webgl-tutorial.iml
 
 

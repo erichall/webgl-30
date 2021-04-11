@@ -1,4 +1,4 @@
-(ns webgl-30.lessons.matrices-2d_2
+(ns webgl-30.lessons.matrices-2d-2
   (:require [reagent.core :as r]
             [webgl-30.math :as m]
             [webgl-30.webgl :as webgl]
